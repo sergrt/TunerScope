@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\workspace\TunerScope\3rdparty\fftw\build\CMakeFiles\65a1ce689c92dcf09bc121e85bc4b80c\generate.stamp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{EF1B0FD8-85CE-3463-8B1B-D3EDCC9A179F}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

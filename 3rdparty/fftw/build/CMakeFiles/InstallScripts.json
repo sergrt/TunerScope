@@ -1,0 +1,7 @@
+{
+	"InstallScripts" : 
+	[
+		"C:/workspace/TunerScope/3rdparty/fftw/build/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

@@ -1,0 +1,10 @@
+^C:\WORKSPACE\TUNERSCOPE\3RDPARTY\FFTW\BUILD\CMAKEFILES\65A1CE689C92DCF09BC121E85BC4B80C\GENERATE.STAMP.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/workspace/TunerScope/3rdparty/fftw -BC:/workspace/TunerScope/3rdparty/fftw/build --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file C:/workspace/TunerScope/3rdparty/fftw/build/fftw.sln
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

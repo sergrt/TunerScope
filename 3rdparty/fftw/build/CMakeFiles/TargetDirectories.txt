@@ -1,0 +1,6 @@
+C:/workspace/TunerScope/3rdparty/fftw/build/CMakeFiles/fftw3.dir
+C:/workspace/TunerScope/3rdparty/fftw/build/CMakeFiles/bench.dir
+C:/workspace/TunerScope/3rdparty/fftw/build/CMakeFiles/RUN_TESTS.dir
+C:/workspace/TunerScope/3rdparty/fftw/build/CMakeFiles/INSTALL.dir
+C:/workspace/TunerScope/3rdparty/fftw/build/CMakeFiles/ALL_BUILD.dir
+C:/workspace/TunerScope/3rdparty/fftw/build/CMakeFiles/ZERO_CHECK.dir
