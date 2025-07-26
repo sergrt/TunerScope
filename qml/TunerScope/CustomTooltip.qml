@@ -5,7 +5,6 @@ import QtQuick.Controls
 Popup {
 
 
-
     property alias text: toolTipText.text
 contentItem:
 

@@ -73,7 +73,7 @@ void AudioEngine::processAudio()
         return;
 
     auto data = m_inputDevice->readAll();
-    qDebug() << "Data size = " << data.size();
+    //qDebug() << "Data size = " << data.size();
 
     // downmix to mono
     const float* samples = reinterpret_cast<const float*>(data.constData());
@@ -214,7 +214,7 @@ void AudioEngine::computeSpectrum(const QVector<float> &buffer) {
                     max_idx = i;
                 }
             }
-            qDebug() << "Freq: " << max_magnitude_freq << " at " << max_idx;
+            //qDebug() << "Freq: " << max_magnitude_freq << " at " << max_idx;
         }
 
         // Normalize
@@ -237,8 +237,8 @@ void AudioEngine::computeSpectrum(const QVector<float> &buffer) {
                 m_prevMagnitudes[k] = magnitudes[k];
         }
 
-        //emit spectrumUpdated(magnitudes);
-
+        emit spectrumUpdated(magnitudes);
+        return;
 
         static QVector<float> magnitudesDB;
         magnitudesDB.reserve(magnitudes.size());

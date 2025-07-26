@@ -65,6 +65,43 @@ Item {
             }
         */
 
+        Rectangle {
+            id: current_freq_container
+            property alias text: current_freq.text
+
+            anchors.left: gistogram_item.left
+            anchors.top: gistogram_item.top
+
+            border.color: "dimgrey"
+            color: "antiquewhite"
+            border.width: 1
+            radius: 3
+
+            width: current_freq.width + 2 * radius
+            height: current_freq.height + 2 * radius
+
+            visible: false
+
+            Text {
+
+                anchors.centerIn: parent
+                id: current_freq
+                //readonly property int mark_height: 2
+                visible: true
+                font: fixedFont
+
+                //width: 10
+                text: "123"//scaleItem
+                color: "black"
+                y: 0
+                fontSizeMode: Text.Fit
+                //width: 50
+                //x: 0
+                //z: 1
+            }
+        }
+
+
         delegate: Item {
             id: delegate
             /*
@@ -110,22 +147,53 @@ Item {
 
 
 
-
+MouseArea {
+    id: area
             Rectangle {
                 id: gistogram_item
                 width: parent.width
                 height: Math.max(1, magnitude * (parent.height - list_root.scale_height))
                 y: parent.height- height - list_root.scale_height// ← растёт снизу вверх
                     //list_root.height - 30// - height
-                color: Qt.rgba(
+                color:
+                    hoverHandler.hovered ? "darkorange" :
+
+                                           Qt.rgba(
                     magnitude,
                     0.4 + 0.6 * magnitude,
                     1.0,
                     1.0
                 )
+            }
 
 
-                MouseArea {
+
+            /*
+            Shape {
+                    //anchors.fill: parent
+                    //anchors.centerIn: parent
+                id: mark_current
+                //readonly property int mark_height: 2
+                visible: index % list_root.mark_density == 0
+                    ShapePath {
+                        strokeWidth: 2
+                        strokeColor: "orange"
+                        fillColor: "orange"
+                        fillRule: ShapePath.OddEvenFill
+
+                        PathPolyline {
+                            path: [ Qt.point(0.0, 0.0),
+                                        Qt.point(0.0, gistogram_item.y + gistogram_item.height),
+
+                                      ]
+
+                        }
+                    }
+                }
+                */
+
+
+
                                 anchors.fill: parent
                                 hoverEnabled: true // Enable hover events
 
@@ -141,16 +209,27 @@ Item {
 
                                     //myCustomToolTip.show(mouseX, mouseY + gistogram_item.height, scaleItem)
                                     myCustomToolTip.contentItem.text = scaleItem
+                                    myCustomToolTip.x = mouseX + 0
                                     //myCustomToolTip.x = mouseX
                                     //myCustomToolTip.y = mouseY + gistogram_item.y
-                                    myCustomToolTip.open()
+                                    //myCustomToolTip.open()
+
+                                    var pos = mapToItem(list_root, mouseX, mouseY)
+                                    current_freq_container.x = pos.x;
+                                    current_freq_container.text = scaleItem;
+                                    current_freq_container.visible = true;
+                                    console.log("+");
 
 
                                 }
 
                                 onExited: {
                                     //myCustomToolTip.hide()
-                                    myCustomToolTip.close()
+                                    //console.log("1")
+                                    //myCustomToolTip.close()
+                                    if (current_freq_container.text == scaleItem)
+                                        current_freq_container.visible = false;
+                                    console.log("-");
                                 }
 
                                 onPositionChanged: {
@@ -164,13 +243,15 @@ Item {
                                         //myCustomToolTip.y = pos.y
                                         //myCustomToolTip.x = mouseX
                                         //myCustomToolTip.y = mouseY + gistogram_item.y
-                                        myCustomToolTip.text = scaleItem
+                                        myCustomToolTip.x = mouseX + 0
+                                        //myCustomToolTip.text = scaleItem
                                         //myCustomToolTip.x = mouseX
                                         //myCustomToolTip.y = mouseY + gistogram_item.y
-
+                                        var pos = mapToItem(list_root, mouseX, mouseY)
+                                        current_freq_container.x = pos.x;
                                     }
                                 }
-                            }
+
 
 
             }
@@ -197,6 +278,8 @@ Item {
                         }
                     }
                 }
+
+
 
 
 
