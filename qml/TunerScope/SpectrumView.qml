@@ -28,7 +28,13 @@ Item {
         id: list_root
         anchors.fill: parent
         //implicitHeight: 100
+        //width: parent.width
+        //height: parent.height
 
+        ScrollBar.horizontal:  ScrollBar {
+                    id: verticalScrollBar
+                    policy: ScrollBar.AlwaysOn // Or ScrollBar.AsNeeded
+                }
 
         orientation: ListView.Horizontal
         spacing: 0

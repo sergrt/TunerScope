@@ -2,7 +2,7 @@ import QtQuick
 import QtQuick.Window
 //import TunerScope
 import QtQuick.Layouts
-
+import QtQuick.Controls
 Window {
     width: 640
     height: 360
@@ -21,9 +21,11 @@ Window {
             Layout.fillWidth: true
             implicitHeight: 2 * parent.height / 3
 
+
             SpectrumView {
                 anchors.fill: parent
             }
+
         }
         Rectangle {
             color: "black"

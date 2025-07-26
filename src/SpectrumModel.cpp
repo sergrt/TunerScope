@@ -57,8 +57,19 @@ void SpectrumModel::updateSpectrum(const QVector<float> &spectrum)
             magnitudes[i] = 0.0f;
     }
     */
-    beginResetModel();
+
+    static bool initialSet = false;
+    if (initialSet == false) {
+        beginResetModel();
+    }
+
     m_spectrum = spectrum;
-    endResetModel();
+    if (initialSet == false) {
+        endResetModel();
+        initialSet = true;
+    }
+    //beginInsertRows(index(0,0), 0, kFftSize);
+    dataChanged(createIndex(0,0), createIndex(kFftSize,0), {MagnitudeRole});
+    //endInsertRows();
 }
  

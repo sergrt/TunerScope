@@ -118,8 +118,10 @@ void fft(std::vector<double[2]> &data) {
     }
     */
     //fftw_free(in);
-    //fftw_free(out);
 
+
+
+    //fftw_free(out);
 
     return;
     /*
@@ -176,7 +178,6 @@ void AudioEngine::computeSpectrum(const QVector<float> &buffer) {
             data[i][1] = 0.0;
         }
 
-
         //for (int j = 0; j < std::min(fftSize, static_cast<int>(buffer.size())); ++j) {
         //    data[j] = buffer[j] * m_window[j];
         //}
@@ -184,12 +185,14 @@ void AudioEngine::computeSpectrum(const QVector<float> &buffer) {
         static QVector<float> magnitudes(kFftSize);
         magnitudes.resize(0);
 
-        for (int i = 0; i < data.size(); ++i) {
+        for (int i = 0, sz = data.size(); i < sz; ++i) {
             //magnitudes.push_back(std::abs(data[i]));
             //magnitudes.push_back(sqrt( data[i].real() * data[i].real() + data[i].imag() * data[i].imag()));
             magnitudes.push_back(sqrt( data[i][0] * data[i][0] + data[i][1] * data[i][1]));
         }
 
+        auto max_magnitude = *std::max_element(magnitudes.begin(), magnitudes.end());
+        /*
         int max_magnitude = 0;
 
         for (int i = 0; i < magnitudes.size(); ++i) {
@@ -197,6 +200,7 @@ void AudioEngine::computeSpectrum(const QVector<float> &buffer) {
                 max_magnitude = magnitudes[i];
             }
         }
+        */
 
         {
             float max_magnitude = 0.0;
@@ -213,9 +217,13 @@ void AudioEngine::computeSpectrum(const QVector<float> &buffer) {
             qDebug() << "Freq: " << max_magnitude_freq << " at " << max_idx;
         }
 
+        // Normalize
+
         for (int i = 0; i < magnitudes.size(); ++i) {
             magnitudes[i] = magnitudes[i] / max_magnitude;
         }
+
+
 
 
 
@@ -229,7 +237,35 @@ void AudioEngine::computeSpectrum(const QVector<float> &buffer) {
                 m_prevMagnitudes[k] = magnitudes[k];
         }
 
-        emit spectrumUpdated(magnitudes);
+        //emit spectrumUpdated(magnitudes);
+
+
+        static QVector<float> magnitudesDB;
+        magnitudesDB.reserve(magnitudes.size());
+        magnitudesDB.resize(0);
+        //std::fill(magnitudesDB.begin(), magnitudesDB.end(), 0.0f);
+
+        float minDb = -80.0f;  // шумовой порог
+        float maxDb = 0.0f;    // максимум (полная амплитуда)
+
+        for (int i = 0, sz = magnitudes.size(); i < sz; ++i) {
+
+            //float db = 20 * log10(magnitudes[i] + 1e-5f);
+            //db = std::clamp(db, -80.0f, 0.0f);
+            //float norm = powf((db + 80.0f) / 80.0f, 0.6f);
+
+            // Перевод в дБ с защитой от лог(0)
+            float dB = 20.0f * std::log10(std::max(magnitudes[i], 1e-6f));
+            // Нормализация в [0.0 ... 1.0]
+            float norm = std::clamp((dB - minDb) / (maxDb - minDb), 0.0f, 1.0f);
+
+            magnitudesDB.push_back(norm);
+        }
+
+
+
+
+        emit spectrumUpdated(magnitudesDB);
 
 
 
