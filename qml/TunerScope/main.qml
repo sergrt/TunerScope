@@ -32,7 +32,7 @@ Window {
             Layout.fillHeight: false
             Layout.fillWidth: true
             Layout.alignment: top
-            implicitHeight: 2 * parent.height / 3
+            implicitHeight: parent.height / 3
             //ScaleView {
             //    anchors.fill: parent
             //}

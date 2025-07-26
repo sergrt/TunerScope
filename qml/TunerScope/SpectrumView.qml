@@ -1,6 +1,9 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import QtQuick.Shapes
+
+
 
 Item {
     id: root
@@ -39,6 +42,13 @@ Item {
         orientation: ListView.Horizontal
         spacing: 0
         model: spectrumModel
+        readonly property int mark_gap_px: 2
+        readonly property int mark_height_px: 2
+        readonly property int scale_height: fixedFontHeight + mark_gap_px + mark_height_px
+        readonly property int mark_density: 20
+
+
+
         /*
         delegate: Rectangle {
                 width: 2
@@ -54,6 +64,7 @@ Item {
                 )
             }
         */
+
         delegate: Item {
             id: delegate
             /*
@@ -82,22 +93,29 @@ Item {
                     }
                 }
 
+            /*
             ToolTip.visible: hoverHandler.hovered
-
+            ToolTip.text: tooltip
+            ToolTip.delay: 0
+            */
             width: 2
             height: list_root.height
 
-            //ToolTip.visible: hovered
-            ToolTip.text: tooltip
-            ToolTip.delay: 0
+
+
+            CustomTooltip {
+                        id: myCustomToolTip
+                    }
+
 
 
 
 
             Rectangle {
+                id: gistogram_item
                 width: parent.width
-                height: Math.max(1, magnitude * parent.height)
-                y: parent.height- height  // ← растёт снизу вверх
+                height: Math.max(1, magnitude * (parent.height - list_root.scale_height))
+                y: parent.height- height - list_root.scale_height// ← растёт снизу вверх
                     //list_root.height - 30// - height
                 color: Qt.rgba(
                     magnitude,
@@ -105,7 +123,104 @@ Item {
                     1.0,
                     1.0
                 )
+
+
+                MouseArea {
+                                anchors.fill: parent
+                                hoverEnabled: true // Enable hover events
+
+
+                                onEntered: {
+                                    // Show the tooltip at the mouse cursor position relative to the window
+                                    //var pos = mapToItem(list_root, mouseX, mouseY)
+                                    //pos.x = pos.x - list_root.x
+                                    //pos.y = pos.y - list_root.y
+                                    //pos = mapFromItem(list_root, pos.x, pos.y)
+                                    //myCustomToolTip.show(mouseX + 10, mouseY + 10, "This is a custom tooltip!")
+                                    //myCustomToolTip.show(pos.x, pos.y, "This is a custom tooltip!")
+
+                                    //myCustomToolTip.show(mouseX, mouseY + gistogram_item.height, scaleItem)
+                                    myCustomToolTip.contentItem.text = scaleItem
+                                    //myCustomToolTip.x = mouseX
+                                    //myCustomToolTip.y = mouseY + gistogram_item.y
+                                    myCustomToolTip.open()
+
+
+                                }
+
+                                onExited: {
+                                    //myCustomToolTip.hide()
+                                    myCustomToolTip.close()
+                                }
+
+                                onPositionChanged: {
+                                    // Update tooltip position as the mouse moves within the area
+                                    if (myCustomToolTip.visible) {
+                                        //var pos = mapToItem(list_root, mouseX, mouseY)
+                                        //pos.x = pos.x - list_root.x
+                                        //pos.y = pos.y - list_root.y
+                                        //pos = mapFromItem(list_root, pos.x, pos.y)
+                                        //myCustomToolTip.x = pos.x
+                                        //myCustomToolTip.y = pos.y
+                                        //myCustomToolTip.x = mouseX
+                                        //myCustomToolTip.y = mouseY + gistogram_item.y
+                                        myCustomToolTip.text = scaleItem
+                                        //myCustomToolTip.x = mouseX
+                                        //myCustomToolTip.y = mouseY + gistogram_item.y
+
+                                    }
+                                }
+                            }
+
+
             }
+
+
+            Shape {
+                    //anchors.fill: parent
+                    //anchors.centerIn: parent
+                id: mark
+                //readonly property int mark_height: 2
+                visible: index % list_root.mark_density == 0
+                    ShapePath {
+                        strokeWidth: 2
+                        strokeColor: "white"
+                        fillColor: "orange"
+                        fillRule: ShapePath.OddEvenFill
+
+                        PathPolyline {
+                            path: [ Qt.point(0.0, gistogram_item.y + gistogram_item.height + 1),
+                                        Qt.point(0.0, gistogram_item.y + gistogram_item.height + 1 + list_root.mark_height_px),
+
+                                      ]
+
+                        }
+                    }
+                }
+
+
+
+            Text {
+                visible: index % list_root.mark_density == 0
+                y: parent.height - list_root.scale_height - 2 + list_root.mark_gap_px + list_root.mark_height_px
+                x:  - width / 2
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
+                //anchors.horizontalCenter: gistogram_item
+                //fontSizeMode: Text.Fit
+                font: fixedFont
+
+                //width: 10
+                text: scaleItem
+                color: "white"
+            }
+
+
+
+
+
+
+
         }
 
     }

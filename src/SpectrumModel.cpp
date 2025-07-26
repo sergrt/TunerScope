@@ -14,19 +14,29 @@ int SpectrumModel::rowCount(const QModelIndex &) const
 QVariant SpectrumModel::data(const QModelIndex &index, int role) const
 {
     if (index.isValid() && role == Qt::ToolTipRole)
-        return index.row() * static_cast<float>(kSampleRate) / kFftSize;
+        //return index.row() * static_cast<float>(kSampleRate) / kFftSize;
+        return m_scale.value(index.row());
 
-    if (!index.isValid() || role != MagnitudeRole)
+    if (!index.isValid() || (role != MagnitudeRole && role != ScaleItemRole))
         return {};
 
-    return m_spectrum.value(index.row());
+    if (role == MagnitudeRole)
+        return m_spectrum.value(index.row());
+
+    if (role == ScaleItemRole) {
+
+
+        return m_scale.value(index.row());
+    }
+    return {};
 }
 
 QHash<int, QByteArray> SpectrumModel::roleNames() const
 {
     return {
         { MagnitudeRole, "magnitude" },
-        { Qt::ToolTipRole, "tooltip" }
+        { ScaleItemRole, "scaleItem" },
+        { Qt::ToolTipRole, "tooltip" },
     };
 }
 
@@ -68,8 +78,16 @@ void SpectrumModel::updateSpectrum(const QVector<float> &spectrum)
         endResetModel();
         initialSet = true;
     }
+
+    QVector<int> scale_values;
+    scale_values.push_back(0);
+    for (int i = 1; i < m_spectrum.size(); ++i) {
+        scale_values.push_back( i * static_cast<float>(kSampleRate) / kFftSize);
+    }
+    m_scale.swap(scale_values);
+
     //beginInsertRows(index(0,0), 0, kFftSize);
-    dataChanged(createIndex(0,0), createIndex(kFftSize,0), {MagnitudeRole});
+    dataChanged(createIndex(0,0), createIndex(kFftSize,0), {MagnitudeRole, ScaleItemRole, Qt::ToolTipRole});
     //endInsertRows();
 }
  

@@ -7,7 +7,8 @@ class SpectrumModel : public QAbstractListModel
     Q_OBJECT
 public:
     enum Roles {
-        MagnitudeRole = Qt::UserRole + 1
+        MagnitudeRole = Qt::UserRole + 1,
+        ScaleItemRole = Qt::UserRole + 2
     };
 
     SpectrumModel(QObject *parent = nullptr);
@@ -21,4 +22,5 @@ public slots:
 
 private:
     QVector<float> m_spectrum;
+    QVector<int> m_scale;
 };

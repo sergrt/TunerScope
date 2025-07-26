@@ -1,6 +1,8 @@
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
+#include <QFontDatabase>
+#include <QFontMetrics>
 
 #include "AudioEngine.h"
 #include "SpectrumModel.h"
@@ -32,6 +34,13 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("audioEngine", &audioEngine);
     engine.rootContext()->setContextProperty("spectrumModel", &spectrumModel);
     engine.rootContext()->setContextProperty("scaleModel", &scaleModel);
+
+
+    QFont fixedFont = QFontDatabase::systemFont(QFontDatabase::SmallestReadableFont);
+    engine.rootContext()->setContextProperty("fixedFont", fixedFont);
+    auto fixedFontHeight = 2 * QFontMetrics(fixedFont).height();//33;//fixedFont.pixelSize();
+    engine.rootContext()->setContextProperty("fixedFontHeight", fixedFontHeight);
+
 
     //engine.addImportPath(":/qt/qml/");
     //engine.loadFromModule("TunerScope", "main");
