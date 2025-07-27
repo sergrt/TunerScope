@@ -6,17 +6,13 @@ QtObject {
 
     //property int lastDrawnIndex: -10000
 
-    function shouldDisplayLabel(lastDrawnIndex, index, text) {
+    function shouldDisplayLabel(index, text) {
 
         //console.log(index + " " + text)
-        const spacing = 2; // Ширина одного элемента
-        const minGap = 16; // Мин. расстояние в пикселях между надписями
-        const textWidth = text.length * 6; // Приблизительно 6px на символ
+        const pixelsPerItem = 2; // Ширина одного элемента
+        const spacingInPixels = 16; // Мин. расстояние в пикселях между надписями
+        const textWidth = "00000".length + 6;//text.length * 6; // Приблизительно 6px на символ
 
-        if ((index - lastDrawnIndex) * spacing > textWidth + minGap) {
-            //lastDrawnIndex = index;
-            return [true, index];
-        }
-        return [false, lastDrawnIndex];
+        return (index * pixelsPerItem) % (spacingInPixels + textWidth) === 0;
     }
 }

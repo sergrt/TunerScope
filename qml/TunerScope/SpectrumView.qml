@@ -238,8 +238,8 @@ MouseArea {
                     //anchors.centerIn: parent
                 id: mark
                 //readonly property int mark_height: 2
-                visible: index % list_root.mark_density == 0
-                //visible: labelHelper.shouldDisplayLabel(index, scale_text.text)
+                //visible: index % list_root.mark_density == 0
+                visible: labelHelper.shouldDisplayLabel(index, scale_text.text)
                     ShapePath {
                         strokeWidth: 2
                         strokeColor: "white"
@@ -263,15 +263,10 @@ MouseArea {
             Text {
                 id: scale_text
 
-                property int lastDrawnIndex: -1000;
+
 
                 //visible: index % list_root.mark_density == 0
-                visible: {
-                    var res = labelHelper.shouldDisplayLabel(list_root.model.lastDrawnIndex, index, text);
-                    //lastDrawnIndex = res[1]
-                    list_root.model.lastDrawnIndex = res[1]
-                    return res[0]
-                }
+                visible: labelHelper.shouldDisplayLabel(index, text)
 
                 y: parent.height - list_root.scale_height - 2 + list_root.mark_gap_px + list_root.mark_height_px
                 x:  - width / 2
