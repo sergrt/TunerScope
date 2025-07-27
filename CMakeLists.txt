@@ -20,6 +20,8 @@ qt_add_executable(appTunerScope
     src/SpectrumModel.h
     src/ScaleModel.cpp
     src/ScaleModel.h
+    src/TunerModel.cpp
+    src/TunerModel.h
 )
 
 

@@ -31,7 +31,7 @@ Window {
             color: "black"
             Layout.fillHeight: false
             Layout.fillWidth: true
-            Layout.alignment: top
+            Layout.alignment: Qt.AlignTop
             implicitHeight: parent.height / 3
             TunerView {
                 anchors.fill: parent
