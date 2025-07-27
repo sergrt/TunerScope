@@ -13,6 +13,7 @@ public:
     ~AudioEngine();
 
 signals:
+    //void spectrumPeaks(float freq);
     void spectrumUpdated(const QVector<float> &spectrum);
 
 private slots:

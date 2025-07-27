@@ -191,7 +191,9 @@ void AudioEngine::computeSpectrum(const QVector<float> &buffer) {
             magnitudes.push_back(sqrt( data[i][0] * data[i][0] + data[i][1] * data[i][1]));
         }
 
-        auto max_magnitude = *std::max_element(magnitudes.begin(), magnitudes.end());
+        auto max_magnitude_iterator = std::max_element(magnitudes.begin(), magnitudes.end());
+        auto max_magnitude = *max_magnitude_iterator;
+        auto max_magnitude_freq = std::distance(magnitudes.begin(), max_magnitude_iterator) * static_cast<float>(kSampleRate) / kFftSize;
         /*
         int max_magnitude = 0;
 
@@ -223,6 +225,16 @@ void AudioEngine::computeSpectrum(const QVector<float> &buffer) {
             magnitudes[i] = magnitudes[i] / max_magnitude;
         }
 
+        // Noise gate
+        /*
+        float threshold = 0.3;
+
+        for (int i = 0; i < magnitudes.size(); ++i) {
+            if (magnitudes[i] > threshold) {
+                magnitudes[i] = 0.0f;
+            }
+        }
+        */
 
 
 
@@ -232,11 +244,13 @@ void AudioEngine::computeSpectrum(const QVector<float> &buffer) {
         for (int k = 0; k < magnitudes.size(); ++k) {
             //float norm = maxMag > 0.0f ? magnitudes[k] / maxMag : 0.0f;
             //norm = powf(norm, 0.4f);
-            magnitudes[k] = 0.8f * m_prevMagnitudes[k] + 0.2f * magnitudes[k];
+            magnitudes[k] = 0.95f * m_prevMagnitudes[k] + 0.05f * magnitudes[k];
+            //magnitudes[k] = 0.5f * m_prevMagnitudes[k] + 0.5f * magnitudes[k];
             if (!qIsInf(magnitudes[k]))
                 m_prevMagnitudes[k] = magnitudes[k];
         }
 
+        //emit spectrumPeaks(max_magnitude_freq);
         emit spectrumUpdated(magnitudes);
         return;
 

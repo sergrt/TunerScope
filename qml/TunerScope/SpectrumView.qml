@@ -65,41 +65,7 @@ Item {
             }
         */
 
-        Rectangle {
-            id: current_freq_container
-            property alias text: current_freq.text
 
-            anchors.left: gistogram_item.left
-            anchors.top: gistogram_item.top
-
-            border.color: "dimgrey"
-            color: "antiquewhite"
-            border.width: 1
-            radius: 3
-
-            width: current_freq.width + 2 * radius
-            height: current_freq.height + 2 * radius
-
-            visible: false
-
-            Text {
-
-                anchors.centerIn: parent
-                id: current_freq
-                //readonly property int mark_height: 2
-                visible: true
-                font: fixedFont
-
-                //width: 10
-                text: "123"//scaleItem
-                color: "black"
-                y: 0
-                fontSizeMode: Text.Fit
-                //width: 50
-                //x: 0
-                //z: 1
-            }
-        }
 
 
         delegate: Item {
@@ -218,7 +184,7 @@ MouseArea {
                                     current_freq_container.x = pos.x;
                                     current_freq_container.text = scaleItem;
                                     current_freq_container.visible = true;
-                                    console.log("+");
+                                    //console.log("+");
 
 
                                 }
@@ -229,7 +195,7 @@ MouseArea {
                                     //myCustomToolTip.close()
                                     if (current_freq_container.text == scaleItem)
                                         current_freq_container.visible = false;
-                                    console.log("-");
+                                    //console.log("-");
                                 }
 
                                 onPositionChanged: {
@@ -306,6 +272,42 @@ MouseArea {
 
         }
 
+
+        Rectangle {
+            id: current_freq_container
+            property alias text: current_freq.text
+
+            //anchors.left: gistogram_item.left
+            //anchors.top: gistogram_item.top
+
+            border.color: "dimgrey"
+            color: "antiquewhite"
+            border.width: 1
+            radius: 3
+
+            width: current_freq.width + 2 * radius
+            height: current_freq.height + 2 * radius
+
+            visible: false
+
+            Text {
+
+                anchors.centerIn: parent
+                id: current_freq
+                //readonly property int mark_height: 2
+                visible: true
+                font: fixedFont
+
+                //width: 10
+                text: "123"//scaleItem
+                color: "black"
+                y: 0
+                fontSizeMode: Text.Fit
+                //width: 50
+                //x: 0
+                //z: 1
+            }
+        }
     }
 
 

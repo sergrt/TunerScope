@@ -7,6 +7,8 @@
 #include "AudioEngine.h"
 #include "SpectrumModel.h"
 #include "ScaleModel.h"
+#include "TunerModel.h"
+
 
 int main(int argc, char *argv[])
 {
@@ -23,18 +25,21 @@ int main(int argc, char *argv[])
     AudioEngine audioEngine;
     SpectrumModel spectrumModel;
     ScaleModel scaleModel;
+    TunerModel tunerModel;
 
     QObject::connect(&audioEngine, &AudioEngine::spectrumUpdated,
                      &spectrumModel, &SpectrumModel::updateSpectrum);
     QObject::connect(&audioEngine, &AudioEngine::spectrumUpdated,
                      &scaleModel, &ScaleModel::updateScale);
+    QObject::connect(&audioEngine, &AudioEngine::spectrumUpdated,
+                     &tunerModel, &TunerModel::updateDetectedNotes);
 
     qmlRegisterType<SpectrumModel>("TunerScope", 1, 0, "SpectrumModel");
 
     engine.rootContext()->setContextProperty("audioEngine", &audioEngine);
     engine.rootContext()->setContextProperty("spectrumModel", &spectrumModel);
     engine.rootContext()->setContextProperty("scaleModel", &scaleModel);
-
+    engine.rootContext()->setContextProperty("tunerModel", &tunerModel);
 
     QFont fixedFont = QFontDatabase::systemFont(QFontDatabase::SmallestReadableFont);
     engine.rootContext()->setContextProperty("fixedFont", fixedFont);

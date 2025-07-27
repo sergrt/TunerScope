@@ -33,6 +33,10 @@ Window {
             Layout.fillWidth: true
             Layout.alignment: top
             implicitHeight: parent.height / 3
+            TunerView {
+                anchors.fill: parent
+            }
+
             //ScaleView {
             //    anchors.fill: parent
             //}
