@@ -52,7 +52,7 @@ AudioEngine::AudioEngine(QObject *parent)
 
     //m_prevMagnitudes.resize(fftSize / 2, 0.0f);
     //
-    m_prevMagnitudes.resize(kFftSize, 0.0f);
+    m_prevMagnitudes.resize(kFftSize / 2, 0.0f);
 
 
 
@@ -182,10 +182,10 @@ void AudioEngine::computeSpectrum(const QVector<float> &buffer) {
         //    data[j] = buffer[j] * m_window[j];
         //}
         fft(data);
-        static QVector<float> magnitudes(kFftSize);
+        static QVector<float> magnitudes(kFftSize / 2);  // Half of spectrum due to Nyquist frequency
         magnitudes.resize(0);
 
-        for (int i = 0, sz = data.size(); i < sz; ++i) {
+        for (int i = 0, sz = std::min(static_cast<int>(data.size()), kFftSize / 2); i < sz; ++i) {
             //magnitudes.push_back(std::abs(data[i]));
             //magnitudes.push_back(sqrt( data[i].real() * data[i].real() + data[i].imag() * data[i].imag()));
             magnitudes.push_back(sqrt( data[i][0] * data[i][0] + data[i][1] * data[i][1]));
@@ -254,6 +254,7 @@ void AudioEngine::computeSpectrum(const QVector<float> &buffer) {
         emit spectrumUpdated(magnitudes);
         return;
 
+        // Convert scale to dB
         static QVector<float> magnitudesDB;
         magnitudesDB.reserve(magnitudes.size());
         magnitudesDB.resize(0);
