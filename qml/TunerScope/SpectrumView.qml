@@ -4,6 +4,8 @@ import QtQuick.Layouts
 import QtQuick.Shapes
 
 
+import TunerScope
+
 
 Item {
     id: root
@@ -22,6 +24,9 @@ Item {
 */
 
 
+    LabelHelper {
+        id: labelHelper
+    }
 
 
     ListView {
@@ -174,7 +179,7 @@ MouseArea {
                                     //myCustomToolTip.show(pos.x, pos.y, "This is a custom tooltip!")
 
                                     //myCustomToolTip.show(mouseX, mouseY + gistogram_item.height, scaleItem)
-                                    myCustomToolTip.contentItem.text = scaleItem
+                                    myCustomToolTip.contentItem.text = model.scaleItem
                                     myCustomToolTip.x = mouseX + 0
                                     //myCustomToolTip.x = mouseX
                                     //myCustomToolTip.y = mouseY + gistogram_item.y
@@ -223,12 +228,18 @@ MouseArea {
             }
 
 
+
+
+
+
+
             Shape {
                     //anchors.fill: parent
                     //anchors.centerIn: parent
                 id: mark
                 //readonly property int mark_height: 2
                 visible: index % list_root.mark_density == 0
+                //visible: labelHelper.shouldDisplayLabel(index, scale_text.text)
                     ShapePath {
                         strokeWidth: 2
                         strokeColor: "white"
@@ -250,7 +261,18 @@ MouseArea {
 
 
             Text {
-                visible: index % list_root.mark_density == 0
+                id: scale_text
+
+                property int lastDrawnIndex: -1000;
+
+                //visible: index % list_root.mark_density == 0
+                visible: {
+                    var res = labelHelper.shouldDisplayLabel(list_root.model.lastDrawnIndex, index, text);
+                    //lastDrawnIndex = res[1]
+                    list_root.model.lastDrawnIndex = res[1]
+                    return res[0]
+                }
+
                 y: parent.height - list_root.scale_height - 2 + list_root.mark_gap_px + list_root.mark_height_px
                 x:  - width / 2
                 horizontalAlignment: Text.AlignHCenter
@@ -312,3 +334,4 @@ MouseArea {
 
 
 }
+

@@ -3,6 +3,9 @@ import QtQuick.Window
 //import TunerScope
 import QtQuick.Layouts
 import QtQuick.Controls
+
+
+
 Window {
     width: 640
     height: 360

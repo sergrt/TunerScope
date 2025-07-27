@@ -35,6 +35,7 @@ qt_add_qml_module(appTunerScope
         qml/TunerScope/SpectrumView.qml
         qml/TunerScope/ScaleView.qml
         qml/TunerScope/CustomTooltip.qml
+        qml/TunerScope/LabelHelper.qml
 )
 set_target_properties(appTunerScope PROPERTIES
     WIN32_EXECUTABLE TRUE
