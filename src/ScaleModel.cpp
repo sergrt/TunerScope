@@ -1,5 +1,6 @@
 #include "ScaleModel.h"
-#include "globals.h"
+
+#include "Globals.h"
 
 ScaleModel::ScaleModel(QObject *parent)
     : QAbstractListModel(parent)

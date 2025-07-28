@@ -20,14 +20,16 @@ private slots:
     void processAudio();
 
 private:
+    void initHannWindow();
+
     QAudioSource *m_audioInput = nullptr;
     QIODevice *m_inputDevice = nullptr;
     QVector<float> m_buffer;
     QTimer m_timer;
 
     void computeSpectrum(const QVector<float> &buffer);
-	
-	QVector<float> m_window;
+
+    QVector<float> hannWindow_;
     QVector<float> m_prevMagnitudes;
 };
  

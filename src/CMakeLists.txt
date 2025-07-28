@@ -30,7 +30,7 @@ set(SOURCES
     TunerModel.cpp
 )
 
-set(QML_FILES
+set(QML_SOURCES
     qml/TunerScope/main.qml
     qml/TunerScope/CustomTooltip.qml
     qml/TunerScope/LabelHelper.qml
@@ -52,17 +52,16 @@ qt_add_executable(${PROJECT_NAME}
 )
 
 source_group("Headers" FILES ${HEADERS})
-source_group("QML" FILES ${QML_FILES})
+source_group("QML" FILES ${QML_SOURCES})
 source_group("Sources" FILES ${SOURCES})
 source_group("Other files" FILES ${OTHER_FILES})
 
-
 qt_add_qml_module(${PROJECT_NAME}
-    URI TunerScope
+    URI ${PROJECT_NAME}
     VERSION 1.0
-    QML_FILES
-        ${QML_FILES}
+    QML_FILES ${QML_SOURCES}
 )
+
 set_target_properties(${PROJECT_NAME} PROPERTIES
     WIN32_EXECUTABLE TRUE
 )

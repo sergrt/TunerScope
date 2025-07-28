@@ -44,11 +44,8 @@ AudioEngine::AudioEngine(QObject *parent)
     QAudioDevice device = QMediaDevices::defaultAudioInput();
     m_audioInput = new QAudioSource(device, format, this);
 
-    // Init Hann window
-    m_window.resize(kFftSize);
-    for (int i = 0; i < kFftSize; ++i) {
-        m_window[i] = 0.5f * (1.0f - qCos(2.0f * M_PI * i / (kFftSize - 1)));
-    }
+    initHannWindow();
+
 
     //m_prevMagnitudes.resize(fftSize / 2, 0.0f);
     //
@@ -65,6 +62,13 @@ AudioEngine::AudioEngine(QObject *parent)
 AudioEngine::~AudioEngine()
 {
     m_audioInput->stop();
+}
+
+void AudioEngine::initHannWindow() {
+    hannWindow_.resize(kFftSize);
+    for (int i = 0; i < kFftSize; ++i) {
+        hannWindow_[i] = 0.5f * (1.0f - qCos(2.0f * M_PI * i / (kFftSize - 1)));
+    }
 }
 
 void AudioEngine::processAudio()
@@ -174,7 +178,7 @@ void AudioEngine::computeSpectrum(const QVector<float> &buffer) {
 
 
         for (int i = 0, sz = std::min(kFftSize, static_cast<int>(buffer.size())); i < sz; ++i) {
-            data[i][0] = buffer[i] * m_window[i];
+            data[i][0] = buffer[i] * hannWindow_[i];
             data[i][1] = 0.0;
         }
 

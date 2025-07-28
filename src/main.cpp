@@ -6,7 +6,6 @@
 
 #include "AudioEngine.h"
 #include "SpectrumModel.h"
-#include "ScaleModel.h"
 #include "TunerModel.h"
 
 
@@ -14,40 +13,29 @@ int main(int argc, char *argv[])
 {
     QGuiApplication app(argc, argv);
     QQmlApplicationEngine engine;
-    QObject::connect(
-        &engine,
-        &QQmlApplicationEngine::objectCreationFailed,
-        &app,
-        []() { QCoreApplication::exit(-1); },
-        Qt::QueuedConnection);
-
+    QObject::connect(&engine, &QQmlApplicationEngine::objectCreationFailed,
+        &app, []() { QCoreApplication::exit(-1); }, Qt::QueuedConnection);
 
     AudioEngine audioEngine;
     SpectrumModel spectrumModel;
-    ScaleModel scaleModel;
     TunerModel tunerModel;
 
     QObject::connect(&audioEngine, &AudioEngine::spectrumUpdated,
                      &spectrumModel, &SpectrumModel::updateSpectrum);
     QObject::connect(&audioEngine, &AudioEngine::spectrumUpdated,
-                     &scaleModel, &ScaleModel::updateScale);
-    QObject::connect(&audioEngine, &AudioEngine::spectrumUpdated,
                      &tunerModel, &TunerModel::updateDetectedNotes);
 
-    qmlRegisterType<SpectrumModel>("TunerScope", 1, 0, "SpectrumModel");
+    //qmlRegisterType<SpectrumModel>("TunerScope", 1, 0, "SpectrumModel");
 
     engine.rootContext()->setContextProperty("audioEngine", &audioEngine);
     engine.rootContext()->setContextProperty("spectrumModel", &spectrumModel);
-    engine.rootContext()->setContextProperty("scaleModel", &scaleModel);
     engine.rootContext()->setContextProperty("tunerModel", &tunerModel);
 
     QFont fixedFont = QFontDatabase::systemFont(QFontDatabase::SmallestReadableFont);
     engine.rootContext()->setContextProperty("fixedFont", fixedFont);
-    auto fixedFontHeight = 2 * QFontMetrics(fixedFont).height();//33;//fixedFont.pixelSize();
+    auto fixedFontHeight = 2 * QFontMetrics(fixedFont).height();
     engine.rootContext()->setContextProperty("fixedFontHeight", fixedFontHeight);
 
-
-    //engine.addImportPath(":/qt/qml/");
     //engine.loadFromModule("TunerScope", "main");
     engine.load(QUrl(QStringLiteral("TunerScope/qml/TunerScope/main.qml")));
 
