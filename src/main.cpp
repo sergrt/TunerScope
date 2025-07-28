@@ -5,6 +5,7 @@
 #include <QFontMetrics>
 
 #include "AudioEngine.h"
+#include "Settings.h"
 #include "SpectrumModel.h"
 #include "TunerModel.h"
 
@@ -16,9 +17,13 @@ int main(int argc, char *argv[])
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreationFailed,
         &app, []() { QCoreApplication::exit(-1); }, Qt::QueuedConnection);
 
+    Settings settings{};
+
     AudioEngine audioEngine;
-    SpectrumModel spectrumModel;
-    TunerModel tunerModel;
+    audioEngine.Start(settings);
+
+    SpectrumModel spectrumModel(settings);
+    TunerModel tunerModel(settings);
 
     QObject::connect(&audioEngine, &AudioEngine::spectrumUpdated,
                      &spectrumModel, &SpectrumModel::updateSpectrum);

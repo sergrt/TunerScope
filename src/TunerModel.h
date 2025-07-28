@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Settings.h"
+
 #include <QAbstractListModel>
 
 class TunerModel : public QAbstractListModel
@@ -11,7 +13,7 @@ public:
         NoteNameRole = Qt::UserRole + 11
     };
 
-    TunerModel(QObject *parent = nullptr);
+    TunerModel(const Settings& settings, QObject *parent = nullptr);
 
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     QVariant data(const QModelIndex &index, int role) const override;
@@ -31,4 +33,7 @@ private:
     };
     std::vector<TuneResult> max_notes{{}};
     std::vector<TuneResult> prev_result{{}};
+
+    int fftSize_{4096};
+    int sampleRate_{48000};
 };

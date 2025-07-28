@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Settings.h"
+
 #include <QAbstractListModel>
 
 class SpectrumModel : public QAbstractListModel
@@ -11,7 +13,7 @@ public:
         ScaleItemRole = Qt::UserRole + 2
     };
 
-    SpectrumModel(QObject *parent = nullptr);
+    SpectrumModel(const Settings& settings, QObject *parent = nullptr);
 
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     QVariant data(const QModelIndex &index, int role) const override;
@@ -23,4 +25,6 @@ public slots:
 private:
     QVector<float> m_spectrum;
     QVector<int> m_scale;
+    int fftSize_{4096};
+    int sampleRate_{48000};
 };

@@ -1,5 +1,4 @@
 #include "TunerModel.h"
-#include "globals.h"
 
 static const std::map<float, std::string> noteMap = {
     {27.500f, "A0"},   {29.135f, "A#0"},  {30.868f, "B0"},
@@ -40,8 +39,10 @@ std::pair<float, std::string> findClosestNote(float frequency) {
     }
 }
 
-TunerModel::TunerModel(QObject *parent)
+TunerModel::TunerModel(const Settings& settings, QObject *parent)
     : QAbstractListModel(parent)
+    , fftSize_{settings.fftSize}
+    , sampleRate_{settings.sampleRate}
 {
 }
 
@@ -79,9 +80,9 @@ void TunerModel::updateDetectedNotes(const QVector<float> &spectrum)
 {
     auto max_magnitude_iterator = std::max_element(spectrum.begin(), spectrum.end());
     auto peakIndex = std::distance(spectrum.begin(), max_magnitude_iterator);
-    auto max_magnitude_freq = std::distance(spectrum.begin(), max_magnitude_iterator) * static_cast<float>(kSampleRate) / kFftSize;
+    auto max_magnitude_freq = std::distance(spectrum.begin(), max_magnitude_iterator) * static_cast<float>(sampleRate_) / fftSize_;
 
-    float deltaF = static_cast<float>(kSampleRate) / kFftSize;
+    float deltaF = static_cast<float>(sampleRate_) / fftSize_;
 
     // parabolic peak interpolation
     if (peakIndex > 0 && peakIndex < spectrum.size() - 1) {
@@ -117,7 +118,7 @@ void TunerModel::updateDetectedNotes(const QVector<float> &spectrum)
 
 
     //beginInsertRows(index(0,0), 0, kFftSize);
-    emit dataChanged(createIndex(0,0), createIndex(kFftSize,0), {FrequencyRole, NoteNameRole});
+    emit dataChanged(createIndex(0,0), createIndex(fftSize_,0), {FrequencyRole, NoteNameRole});
 
     emit updateNote(QString::fromStdString(max_notes[0].noteName),
                     max_notes[0].noteFreq,

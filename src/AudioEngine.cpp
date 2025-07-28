@@ -14,8 +14,6 @@
 #include <fftw3.h>
 #include <algorithm>
 
-#include "globals.h"
-
 void TraceDevices() {
     const QList<QAudioDevice> audioDevices = QMediaDevices::audioInputs();
     for (const QAudioDevice &device : audioDevices)
@@ -35,28 +33,7 @@ AudioEngine::AudioEngine(QObject *parent)
     : QObject(parent)
 {
     TraceDevices();
-    QAudioFormat format;
-    format.setSampleRate(kSampleRate);
-    format.setChannelCount(2);
-    format.setSampleFormat(QAudioFormat::Float);
-    format.setChannelConfig(QAudioFormat::ChannelConfigStereo);
 
-    QAudioDevice device = QMediaDevices::defaultAudioInput();
-    m_audioInput = new QAudioSource(device, format, this);
-
-    initHannWindow();
-
-
-    //m_prevMagnitudes.resize(fftSize / 2, 0.0f);
-    //
-    m_prevMagnitudes.resize(kFftSize / 2, 0.0f);
-
-
-
-    m_inputDevice = m_audioInput->start();
-
-    connect(&m_timer, &QTimer::timeout, this, &AudioEngine::processAudio);
-    m_timer.start(30);
 }
 
 AudioEngine::~AudioEngine()
@@ -64,11 +41,37 @@ AudioEngine::~AudioEngine()
     m_audioInput->stop();
 }
 
+void AudioEngine::Start(const Settings& settings) {
+    fftSize_ = settings.fftSize;
+    sampleRate_ = settings.sampleRate;
+    initHannWindow();
+    initPrevMagnitudes();
+
+    QAudioFormat format;
+    format.setSampleRate(sampleRate_);
+    format.setChannelCount(2);
+    format.setSampleFormat(QAudioFormat::Float);
+    format.setChannelConfig(QAudioFormat::ChannelConfigStereo);
+
+    QAudioDevice device = QMediaDevices::defaultAudioInput();
+    m_audioInput = new QAudioSource(device, format, this);
+    m_inputDevice = m_audioInput->start();
+    if (!m_inputDevice)
+        throw std::runtime_error("Unable to start audio input");
+
+    connect(&m_timer, &QTimer::timeout, this, &AudioEngine::processAudio);
+    m_timer.start(settings.refreshRateMs);
+}
+
 void AudioEngine::initHannWindow() {
-    hannWindow_.resize(kFftSize);
-    for (int i = 0; i < kFftSize; ++i) {
-        hannWindow_[i] = 0.5f * (1.0f - qCos(2.0f * M_PI * i / (kFftSize - 1)));
+    hannWindow_.resize(fftSize_);
+    for (int i = 0; i < fftSize_; ++i) {
+        hannWindow_[i] = 0.5f * (1.0f - qCos(2.0f * M_PI * i / (fftSize_ - 1)));
     }
+}
+
+void AudioEngine::initPrevMagnitudes() {
+    prevMagnitudes_.resize(fftSize_ / 2, 0.0f);
 }
 
 void AudioEngine::processAudio()
@@ -96,10 +99,10 @@ void AudioEngine::processAudio()
     computeSpectrum(m_buffer);
 }
 
-void fft(std::vector<double[2]> &data) {
+void fft(std::vector<double[2]> &data, int fftSize) {
     fftw_complex *in, *out;
     fftw_plan p;
-    const int N = kFftSize; //data.size();
+    const int N = fftSize; //data.size();
 
     //in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * N);
 
@@ -170,14 +173,14 @@ void AudioEngine::computeSpectrum(const QVector<float> &buffer) {
 */
     {
         //std::valarray<std::complex<float>> data(std::complex<float>(), fftSize);
-        static std::vector<double[2]> data(kFftSize);
-        for (int i = 0; i < kFftSize; ++i) {
+        static std::vector<double[2]> data(fftSize_);
+        for (int i = 0; i < fftSize_; ++i) {
             data[i][0] = 0.0;
             data[i][1] = 0.0;
         }
 
 
-        for (int i = 0, sz = std::min(kFftSize, static_cast<int>(buffer.size())); i < sz; ++i) {
+        for (int i = 0, sz = std::min(fftSize_, static_cast<int>(buffer.size())); i < sz; ++i) {
             data[i][0] = buffer[i] * hannWindow_[i];
             data[i][1] = 0.0;
         }
@@ -185,11 +188,11 @@ void AudioEngine::computeSpectrum(const QVector<float> &buffer) {
         //for (int j = 0; j < std::min(fftSize, static_cast<int>(buffer.size())); ++j) {
         //    data[j] = buffer[j] * m_window[j];
         //}
-        fft(data);
-        static QVector<float> magnitudes(kFftSize / 2);  // Half of spectrum due to Nyquist frequency
+        fft(data, fftSize_);
+        static QVector<float> magnitudes(fftSize_ / 2);  // Half of spectrum due to Nyquist frequency
         magnitudes.resize(0);
 
-        for (int i = 0, sz = std::min(static_cast<int>(data.size()), kFftSize / 2); i < sz; ++i) {
+        for (int i = 0, sz = std::min(static_cast<int>(data.size()), fftSize_ / 2); i < sz; ++i) {
             //magnitudes.push_back(std::abs(data[i]));
             //magnitudes.push_back(sqrt( data[i].real() * data[i].real() + data[i].imag() * data[i].imag()));
             magnitudes.push_back(sqrt( data[i][0] * data[i][0] + data[i][1] * data[i][1]));
@@ -197,7 +200,7 @@ void AudioEngine::computeSpectrum(const QVector<float> &buffer) {
 
         auto max_magnitude_iterator = std::max_element(magnitudes.begin(), magnitudes.end());
         auto max_magnitude = *max_magnitude_iterator;
-        auto max_magnitude_freq = std::distance(magnitudes.begin(), max_magnitude_iterator) * static_cast<float>(kSampleRate) / kFftSize;
+        auto max_magnitude_freq = std::distance(magnitudes.begin(), max_magnitude_iterator) * static_cast<float>(sampleRate_) / fftSize_;
         /*
         int max_magnitude = 0;
 
@@ -213,7 +216,7 @@ void AudioEngine::computeSpectrum(const QVector<float> &buffer) {
             float max_magnitude_freq = 0.0f;
             int max_idx = 0;
             for (int i = 0; i < magnitudes.size(); ++i) {
-                auto freq = i * static_cast<float>(kSampleRate) / kFftSize;
+                auto freq = i * static_cast<float>(sampleRate_) / fftSize_;
                 if (magnitudes[i] > max_magnitude && freq >= 80.0 && freq <= 3000.0) {
                     max_magnitude = magnitudes[i];
                     max_magnitude_freq = freq;
@@ -248,10 +251,10 @@ void AudioEngine::computeSpectrum(const QVector<float> &buffer) {
         for (int k = 0; k < magnitudes.size(); ++k) {
             //float norm = maxMag > 0.0f ? magnitudes[k] / maxMag : 0.0f;
             //norm = powf(norm, 0.4f);
-            magnitudes[k] = 0.95f * m_prevMagnitudes[k] + 0.05f * magnitudes[k];
+            magnitudes[k] = 0.95f * prevMagnitudes_[k] + 0.05f * magnitudes[k];
             //magnitudes[k] = 0.5f * m_prevMagnitudes[k] + 0.5f * magnitudes[k];
             if (!qIsInf(magnitudes[k]))
-                m_prevMagnitudes[k] = magnitudes[k];
+                prevMagnitudes_[k] = magnitudes[k];
         }
 
         //emit spectrumPeaks(max_magnitude_freq);

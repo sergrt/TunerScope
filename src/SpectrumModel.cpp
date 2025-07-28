@@ -1,8 +1,9 @@
 #include "SpectrumModel.h"
-#include "globals.h"
 
-SpectrumModel::SpectrumModel(QObject *parent)
+SpectrumModel::SpectrumModel(const Settings& settings, QObject *parent)
     : QAbstractListModel(parent)
+    , fftSize_{settings.fftSize}
+    , sampleRate_{settings.sampleRate}
 {
 }
 
@@ -82,12 +83,12 @@ void SpectrumModel::updateSpectrum(const QVector<float> &spectrum)
     QVector<int> scale_values;
     scale_values.push_back(0);
     for (int i = 1; i < m_spectrum.size(); ++i) {
-        scale_values.push_back( i * static_cast<float>(kSampleRate) / kFftSize);
+        scale_values.push_back( i * static_cast<float>(sampleRate_) / fftSize_);
     }
     m_scale.swap(scale_values);
 
     //beginInsertRows(index(0,0), 0, kFftSize);
-    dataChanged(createIndex(0,0), createIndex(kFftSize,0), {MagnitudeRole, ScaleItemRole, Qt::ToolTipRole});
+    dataChanged(createIndex(0,0), createIndex(fftSize_,0), {MagnitudeRole, ScaleItemRole, Qt::ToolTipRole});
     //endInsertRows();
 }
  

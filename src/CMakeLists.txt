@@ -16,8 +16,7 @@ qt_standard_project_setup(REQUIRES 6.8)
 
 set(HEADERS
     AudioEngine.h
-    Globals.h
-    ScaleModel.h
+    Settings.h
     SpectrumModel.h
     TunerModel.h
 )
@@ -25,7 +24,6 @@ set(HEADERS
 set(SOURCES
     main.cpp
     AudioEngine.cpp
-    ScaleModel.cpp
     SpectrumModel.cpp
     TunerModel.cpp
 )
@@ -34,7 +32,6 @@ set(QML_SOURCES
     qml/TunerScope/main.qml
     qml/TunerScope/CustomTooltip.qml
     qml/TunerScope/LabelHelper.qml
-    qml/TunerScope/ScaleView.qml
     qml/TunerScope/SpectrumView.qml
     qml/TunerScope/TunerView.qml
 )
