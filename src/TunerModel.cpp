@@ -1,6 +1,6 @@
 #include "TunerModel.h"
 
-static const std::map<float, std::string> noteMap = {
+static const std::map<float, QString> noteMap = {
     {27.500f, "A0"},   {29.135f, "A#0"},  {30.868f, "B0"},
     {32.703f, "C1"},   {34.648f, "C#1"},  {36.708f, "D1"},   {38.891f, "D#1"},  {41.203f, "E1"},   {43.654f, "F1"},   {46.249f, "F#1"},  {48.999f, "G1"},   {51.913f, "G#1"},
     {55.000f, "A1"},   {58.270f, "A#1"},  {61.735f, "B1"},
@@ -19,7 +19,7 @@ static const std::map<float, std::string> noteMap = {
     {4186.009f, "C8"}
 };
 
-std::pair<float, std::string> findClosestNote(float frequency) {
+std::pair<float, QString> findClosestNote(float frequency) {
     if (noteMap.empty())
         return {};
 
@@ -42,42 +42,35 @@ std::pair<float, std::string> findClosestNote(float frequency) {
 TunerModel::TunerModel(const Settings& settings, QObject *parent)
     : QAbstractListModel(parent)
     , fftSize_{settings.fftSize}
-    , sampleRate_{settings.sampleRate}
-{
+    , sampleRate_{settings.sampleRate} {
 }
 
-int TunerModel::rowCount(const QModelIndex &) const
-{
+int TunerModel::rowCount(const QModelIndex &) const {
     return max_notes.size();
 }
 
-QVariant TunerModel::data(const QModelIndex &index, int role) const
-{
-
-
-    if (!index.isValid() || (role != FrequencyRole && role != NoteNameRole))
+QVariant TunerModel::data(const QModelIndex &index, int role) const {
+    if (!index.isValid())
         return {};
 
     if (role == FrequencyRole)
         return max_notes[index.row()].noteFreq;
 
     if (role == NoteNameRole) {
-        return QString::fromStdString(max_notes[index.row()].noteName);
+        return max_notes[index.row()].noteName;
     }
+
     return {};
 }
 
-QHash<int, QByteArray> TunerModel::roleNames() const
-{
+QHash<int, QByteArray> TunerModel::roleNames() const {
     return {
-            { FrequencyRole, "frequency" },
-            { NoteNameRole, "noteName" },
-
-            };
+        { FrequencyRole, "frequency" },
+        { NoteNameRole, "noteName" },
+    };
 }
 
-void TunerModel::updateDetectedNotes(const QVector<float> &spectrum)
-{
+void TunerModel::updateDetectedNotes(const QVector<float> &spectrum) {
     auto max_magnitude_iterator = std::max_element(spectrum.begin(), spectrum.end());
     auto peakIndex = std::distance(spectrum.begin(), max_magnitude_iterator);
     auto max_magnitude_freq = std::distance(spectrum.begin(), max_magnitude_iterator) * static_cast<float>(sampleRate_) / fftSize_;
@@ -101,7 +94,7 @@ void TunerModel::updateDetectedNotes(const QVector<float> &spectrum)
 
 
         // Apply prev result to smooth
-        if (prev_result[0].noteName.empty()) {
+        if (prev_result[0].noteName.isEmpty()) {
             prev_result[0] = {closestNote.second, noteFreq, frequency, cents};
         } else {
             max_notes[0] = {closestNote.second,
@@ -114,16 +107,10 @@ void TunerModel::updateDetectedNotes(const QVector<float> &spectrum)
         //max_notes[0] = {closestNote.second, noteFreq, frequency, cents};
     }
 
+    //emit dataChanged(createIndex(0,0), createIndex(fftSize_,0), {FrequencyRole, NoteNameRole});
 
-
-
-    //beginInsertRows(index(0,0), 0, kFftSize);
-    emit dataChanged(createIndex(0,0), createIndex(fftSize_,0), {FrequencyRole, NoteNameRole});
-
-    emit updateNote(QString::fromStdString(max_notes[0].noteName),
+    emit updateNote(max_notes[0].noteName,
                     max_notes[0].noteFreq,
                     max_notes[0].curFreq,
                     max_notes[0].cents);
-    //endInsertRows();
 }
-

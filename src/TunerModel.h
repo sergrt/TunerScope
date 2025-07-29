@@ -4,9 +4,9 @@
 
 #include <QAbstractListModel>
 
-class TunerModel : public QAbstractListModel
-{
+class TunerModel : public QAbstractListModel {
     Q_OBJECT
+
 public:
     enum Roles {
         FrequencyRole = Qt::UserRole + 10,
@@ -21,12 +21,13 @@ public:
 
 public slots:
     void updateDetectedNotes(const QVector<float> &spectrum);
+
 signals:
     void updateNote(const QString& noteName, float noteFreq, float curFreq, float cents);
 
 private:
     struct TuneResult {
-        std::string noteName;
+        QString noteName;
         float noteFreq = 0.0f;
         float curFreq = 0.0f;
         float cents = 0.0f;

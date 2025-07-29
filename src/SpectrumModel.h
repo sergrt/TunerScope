@@ -4,9 +4,9 @@
 
 #include <QAbstractListModel>
 
-class SpectrumModel : public QAbstractListModel
-{
+class SpectrumModel : public QAbstractListModel {
     Q_OBJECT
+
 public:
     enum Roles {
         MagnitudeRole = Qt::UserRole + 1,
@@ -23,8 +23,9 @@ public slots:
     void updateSpectrum(const QVector<float> &spectrum);
 
 private:
-    QVector<float> m_spectrum;
-    QVector<int> m_scale;
+    QVector<float> spectrum_;
+    int prevSpectrumSize_{0};
+    QVector<int> scaleValues_;
     int fftSize_{4096};
     int sampleRate_{48000};
 };
