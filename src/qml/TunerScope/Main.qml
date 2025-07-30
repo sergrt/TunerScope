@@ -27,9 +27,9 @@ Window {
 
         Rectangle {
             color: "black"
-            Layout.fillHeight: false
+            Layout.fillHeight: true
             Layout.fillWidth: true
-            Layout.alignment: Qt.AlignTop
+            Layout.alignment: Qt.AlignVCenter
             implicitHeight: parent.height / 3
 
             TunerView {

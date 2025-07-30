@@ -1,18 +1,17 @@
 #include "AudioEngine.h"
+
 #include <QAudioFormat>
-#include <QAudioDevice>
 #include <QMediaDevices>
 #include <QtMath>
-
 #include <QList>
 #include <QTextStream>
 #include <QDebug>
 
-#include <valarray>
-#include <complex>
-
 #include <fftw3.h>
+
 #include <algorithm>
+
+namespace {
 
 void TraceDevices() {
     const QList<QAudioDevice> audioDevices = QMediaDevices::audioInputs();
@@ -29,15 +28,14 @@ void TraceDevices() {
     }
 }
 
-AudioEngine::AudioEngine(QObject *parent)
-    : QObject(parent)
-{
-    TraceDevices();
+} // namespace
 
+AudioEngine::AudioEngine(QObject *parent)
+    : QObject(parent) {
+    TraceDevices();
 }
 
-AudioEngine::~AudioEngine()
-{
+AudioEngine::~AudioEngine() {
     m_audioInput->stop();
 }
 
@@ -47,7 +45,7 @@ void AudioEngine::Start(const Settings& settings) {
     initHannWindow();
     initPrevMagnitudes();
 
-    QAudioFormat format;
+    QAudioFormat format{};
     format.setSampleRate(sampleRate_);
     format.setChannelCount(2);
     format.setSampleFormat(QAudioFormat::Float);

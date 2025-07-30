@@ -10,7 +10,9 @@ class TunerModel : public QAbstractListModel {
 public:
     enum Roles {
         FrequencyRole = Qt::UserRole + 10,
-        NoteNameRole = Qt::UserRole + 11
+        NoteNameRole = Qt::UserRole + 11,
+        NoteFrequencyRole = Qt::UserRole + 12,
+        DeviationCents = Qt::UserRole + 13
     };
 
     TunerModel(const Settings& settings, QObject *parent = nullptr);
@@ -22,9 +24,6 @@ public:
 public slots:
     void updateDetectedNotes(const QVector<float> &spectrum);
 
-signals:
-    void updateNote(const QString& noteName, float noteFreq, float curFreq, float cents);
-
 private:
     struct TuneResult {
         QString noteName;
@@ -32,8 +31,8 @@ private:
         float curFreq = 0.0f;
         float cents = 0.0f;
     };
-    std::vector<TuneResult> max_notes{{}};
-    std::vector<TuneResult> prev_result{{}};
+    std::vector<TuneResult> maxNotes_;
+    std::vector<TuneResult> prevNotes_{};
 
     int fftSize_{4096};
     int sampleRate_{48000};

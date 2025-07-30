@@ -1,5 +1,7 @@
 #include "TunerModel.h"
 
+namespace {
+
 static const std::map<float, QString> noteMap = {
     {27.500f, "A0"},   {29.135f, "A#0"},  {30.868f, "B0"},
     {32.703f, "C1"},   {34.648f, "C#1"},  {36.708f, "D1"},   {38.891f, "D#1"},  {41.203f, "E1"},   {43.654f, "F1"},   {46.249f, "F#1"},  {48.999f, "G1"},   {51.913f, "G#1"},
@@ -19,34 +21,63 @@ static const std::map<float, QString> noteMap = {
     {4186.009f, "C8"}
 };
 
+auto findClosestNoteIterator(float frequency) {
+    auto it = noteMap.lower_bound(frequency);
+
+    if (it == noteMap.begin()) {
+        return noteMap.begin();
+    } else if (it == noteMap.end()) {
+        return std::prev(it);
+    } else {
+        auto lower = std::prev(it);
+        if ((frequency - lower->first) < (it->first - frequency)) {
+            return lower;
+        } else {
+            return it;
+        }
+    }
+}
+
 std::pair<float, QString> findClosestNote(float frequency) {
     if (noteMap.empty())
         return {};
 
-    auto it = noteMap.lower_bound(frequency);
-
-    if (it == noteMap.begin()) {
-        return *it;
-    } else if (it == noteMap.end()) {
-        return *std::prev(it);
-    } else {
-        auto lower = std::prev(it);
-        if ((frequency - lower->first) < (it->first - frequency)) {
-            return *lower;
-        } else {
-            return *it;
-        }
-    }
+    return *findClosestNoteIterator(frequency);
 }
+
+std::pair<float, QString> findPrevNote(float frequency) {
+    auto it = findClosestNoteIterator(frequency);
+    if (it != noteMap.begin()) {
+        return *std::prev(it);
+    }
+
+    return {0.0f, QString("-")};
+}
+
+std::pair<float, QString> findNextNote(float frequency) {
+    auto it = findClosestNoteIterator(frequency);
+    if (it != noteMap.end()) {
+        auto next = std::next(it);
+        if (next != noteMap.end())
+            return *next;
+    }
+
+    return {0.0f, QString("-")};
+}
+
+} // namespace
 
 TunerModel::TunerModel(const Settings& settings, QObject *parent)
     : QAbstractListModel(parent)
     , fftSize_{settings.fftSize}
     , sampleRate_{settings.sampleRate} {
+
+    maxNotes_.resize(3);
+    prevNotes_.resize(3);
 }
 
 int TunerModel::rowCount(const QModelIndex &) const {
-    return max_notes.size();
+    return maxNotes_.size();
 }
 
 QVariant TunerModel::data(const QModelIndex &index, int role) const {
@@ -54,10 +85,18 @@ QVariant TunerModel::data(const QModelIndex &index, int role) const {
         return {};
 
     if (role == FrequencyRole)
-        return max_notes[index.row()].noteFreq;
+        return maxNotes_[index.row()].noteFreq;
 
     if (role == NoteNameRole) {
-        return max_notes[index.row()].noteName;
+        return maxNotes_[index.row()].noteName;
+    }
+
+    if (role == NoteFrequencyRole) {
+        return maxNotes_[index.row()].noteFreq;
+    }
+
+    if (role == DeviationCents) {
+        return maxNotes_[index.row()].cents;
     }
 
     return {};
@@ -65,8 +104,10 @@ QVariant TunerModel::data(const QModelIndex &index, int role) const {
 
 QHash<int, QByteArray> TunerModel::roleNames() const {
     return {
-        { FrequencyRole, "frequency" },
+        { FrequencyRole, "curFreq" },
         { NoteNameRole, "noteName" },
+        { NoteFrequencyRole, "noteFreq" },
+        { DeviationCents, "cents" }
     };
 }
 
@@ -94,23 +135,24 @@ void TunerModel::updateDetectedNotes(const QVector<float> &spectrum) {
 
 
         // Apply prev result to smooth
-        if (prev_result[0].noteName.isEmpty()) {
-            prev_result[0] = {closestNote.second, noteFreq, frequency, cents};
+        if (prevNotes_[1].noteName.isEmpty()) {
+            prevNotes_[1] = {closestNote.second, noteFreq, frequency, cents};
         } else {
-            max_notes[0] = {closestNote.second,
+            maxNotes_[1] = {closestNote.second,
                             noteFreq,
-                            0.8f * prev_result[0].curFreq + 0.2f * frequency,
-                            0.8f * prev_result[0].cents + 0.2f * cents};
-            prev_result[0] = max_notes[0];
+                            0.8f * prevNotes_[1].curFreq + 0.2f * frequency,
+                            0.8f * prevNotes_[1].cents + 0.2f * cents};
+            prevNotes_[1] = maxNotes_[1];
         }
 
-        //max_notes[0] = {closestNote.second, noteFreq, frequency, cents};
+        auto prev = findPrevNote(max_magnitude_freq);
+        maxNotes_[0].noteFreq = prev.first;
+        maxNotes_[0].noteName = prev.second;
+
+        auto next = findNextNote(max_magnitude_freq);
+        maxNotes_[2].noteFreq = next.first;
+        maxNotes_[2].noteName = next.second;
     }
 
-    //emit dataChanged(createIndex(0,0), createIndex(fftSize_,0), {FrequencyRole, NoteNameRole});
-
-    emit updateNote(max_notes[0].noteName,
-                    max_notes[0].noteFreq,
-                    max_notes[0].curFreq,
-                    max_notes[0].cents);
+    emit dataChanged(createIndex(0,0), createIndex(3,0), {FrequencyRole, NoteNameRole, NoteFrequencyRole, DeviationCents});
 }
