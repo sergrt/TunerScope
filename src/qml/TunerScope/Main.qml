@@ -11,7 +11,7 @@ Window {
 
     ColumnLayout {
         anchors.fill: parent
-        spacing: 20
+        spacing: 0
 
         Rectangle {
             color: "black"

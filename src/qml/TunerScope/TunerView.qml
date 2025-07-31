@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Shapes
 
 Item {
     id: root
@@ -17,10 +18,37 @@ Item {
             width: closestNotesView.width / 3 //(closestNotesView.width - 2 * closestNotesView.spacing) / 3
             y: 20 // TODO: make font as context item and calculate center properly
 
+            Shape {
+                id: tuneMark
+                visible: index === 1
+
+                ShapePath {
+                    id: tuneMarkShapePath
+                    strokeWidth: 5
+                    strokeColor: "darkorange"
+                    fillColor: "orange"
+                    fillRule: ShapePath.OddEvenFill
+
+                    PathPolyline {
+                            //path: [ Qt.point(root.width / 3 / 2 + cents, tuneMarkShapePath.strokeWidth),
+                            //        Qt.point(root.width / 3 / 2 + cents, closestNotesView.height) ]
+                            path: [ Qt.point(root.width / 3 / 2 + cents, tuneMarkShapePath.strokeWidth),
+                                    Qt.point(root.width / 3 / 2 + cents, noteText.height) ]
+                    }
+
+                    PathPolyline {
+                            //path: [ Qt.point(root.width / 3 / 2 + cents, tuneMarkShapePath.strokeWidth),
+                            //        Qt.point(root.width / 3 / 2 + cents, closestNotesView.height) ]
+                            path: [ Qt.point(root.width / 3 / 2 + cents, deviationText.y + deviationText.height),
+                                    Qt.point(root.width / 3 / 2 + cents, closestNotesView.height) ]
+                    }
+                }
+            }
+
             Text {
                 id: noteText
                 anchors.horizontalCenter: parent.horizontalCenter
-                color: "gray"
+                color: "gainsboro"
                 font.pixelSize: 33
                 font.bold: true
                 text: noteName
@@ -48,7 +76,7 @@ Item {
             Text {
                 id: noteFreqText
                 anchors.horizontalCenter: parent.horizontalCenter
-                color: "green"
+                color: "darkturquoise"
                 y: deviationText.y + 36
                 font.pixelSize: 16
                 text: (noteFreq).toFixed(1) + (index === 1 ? " (" + (curFreq).toFixed(1) + ")" : "")

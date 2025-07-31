@@ -30,7 +30,6 @@ set(SOURCES
 
 set(QML_SOURCES
     qml/TunerScope/main.qml
-    qml/TunerScope/CustomTooltip.qml
     qml/TunerScope/LabelHelper.qml
     qml/TunerScope/SpectrumView.qml
     qml/TunerScope/TunerView.qml

@@ -1,8 +1,10 @@
 #include "TunerModel.h"
 
+#include <iterator>
+
 namespace {
 
-static const std::map<float, QString> noteMap = {
+static const std::vector<std::pair<float, QString>> noteMap = {
     {27.500f, "A0"},   {29.135f, "A#0"},  {30.868f, "B0"},
     {32.703f, "C1"},   {34.648f, "C#1"},  {36.708f, "D1"},   {38.891f, "D#1"},  {41.203f, "E1"},   {43.654f, "F1"},   {46.249f, "F#1"},  {48.999f, "G1"},   {51.913f, "G#1"},
     {55.000f, "A1"},   {58.270f, "A#1"},  {61.735f, "B1"},
@@ -22,20 +24,23 @@ static const std::map<float, QString> noteMap = {
 };
 
 auto findClosestNoteIterator(float frequency) {
-    auto it = noteMap.lower_bound(frequency);
+    float minDiff = std::numeric_limits<float>::max();
+    int maxIndex = 0;
 
-    if (it == noteMap.begin()) {
-        return noteMap.begin();
-    } else if (it == noteMap.end()) {
-        return std::prev(it);
-    } else {
-        auto lower = std::prev(it);
-        if ((frequency - lower->first) < (it->first - frequency)) {
-            return lower;
-        } else {
-            return it;
+    size_t i = 0;
+    while (i < noteMap.size()) {
+        const auto& [freq, name] = noteMap[i];
+        float diff = std::abs(freq - frequency);
+        if (diff < minDiff) {
+            minDiff = diff;
+            maxIndex = i;
         }
-    }
+        ++i;
+    };
+
+    auto closestIterator = noteMap.begin();
+    std::advance(closestIterator, maxIndex);
+    return closestIterator;
 }
 
 std::pair<float, QString> findClosestNote(float frequency) {
@@ -85,7 +90,7 @@ QVariant TunerModel::data(const QModelIndex &index, int role) const {
         return {};
 
     if (role == FrequencyRole)
-        return maxNotes_[index.row()].noteFreq;
+        return maxNotes_[index.row()].curFreq;
 
     if (role == NoteNameRole) {
         return maxNotes_[index.row()].noteName;
@@ -129,7 +134,7 @@ void TunerModel::updateDetectedNotes(const QVector<float> &spectrum) {
 
         float frequency = interpolatedIndex * deltaF;
 
-        auto closestNote = findClosestNote(max_magnitude_freq);
+        auto closestNote = findClosestNote(frequency);
         float noteFreq = closestNote.first;
         float cents = 1200 * log2(frequency / noteFreq);
 
@@ -145,11 +150,11 @@ void TunerModel::updateDetectedNotes(const QVector<float> &spectrum) {
             prevNotes_[1] = maxNotes_[1];
         }
 
-        auto prev = findPrevNote(max_magnitude_freq);
+        auto prev = findPrevNote(frequency);
         maxNotes_[0].noteFreq = prev.first;
         maxNotes_[0].noteName = prev.second;
 
-        auto next = findNextNote(max_magnitude_freq);
+        auto next = findNextNote(frequency);
         maxNotes_[2].noteFreq = next.first;
         maxNotes_[2].noteName = next.second;
     }
