@@ -21,6 +21,7 @@ public:
 
 public slots:
     void updateSpectrum(const QVector<float> &spectrum);
+    void updateFft(int fftSize);
 
 private:
     QVector<float> spectrum_;

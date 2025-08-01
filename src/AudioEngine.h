@@ -23,6 +23,9 @@ signals:
 private slots:
     void processAudio();
 
+public slots:
+    void restart(int fftSize);
+
 private:
     void initHannWindow();
     void initPrevMagnitudes();
@@ -38,5 +41,6 @@ private:
     QVector<float> prevMagnitudes_;
     int fftSize_{16384};
     int sampleRate_{48000};
+    int refreshRateMs_{50};
 };
  

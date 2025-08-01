@@ -42,6 +42,7 @@ AudioEngine::~AudioEngine() {
 void AudioEngine::Start(const Settings& settings) {
     fftSize_ = settings.fftSize;
     sampleRate_ = settings.sampleRate;
+    refreshRateMs_ = settings.refreshRateMs;
     initHannWindow();
     initPrevMagnitudes();
 
@@ -58,7 +59,31 @@ void AudioEngine::Start(const Settings& settings) {
         throw std::runtime_error("Unable to start audio input");
 
     connect(&m_timer, &QTimer::timeout, this, &AudioEngine::processAudio);
-    m_timer.start(settings.refreshRateMs);
+    m_timer.start(refreshRateMs_);
+}
+
+void AudioEngine::restart(int fftSize) {
+    m_timer.stop();
+    m_audioInput->stop();
+
+    fftSize_ = fftSize;
+    initHannWindow();
+    initPrevMagnitudes();
+
+    QAudioFormat format{};
+    format.setSampleRate(sampleRate_);
+    format.setChannelCount(2);
+    format.setSampleFormat(QAudioFormat::Float);
+    format.setChannelConfig(QAudioFormat::ChannelConfigStereo);
+
+    QAudioDevice device = QMediaDevices::defaultAudioInput();
+    m_audioInput = new QAudioSource(device, format, this);
+    m_inputDevice = m_audioInput->start();
+    if (!m_inputDevice)
+        throw std::runtime_error("Unable to start audio input");
+
+    //connect(&m_timer, &QTimer::timeout, this, &AudioEngine::processAudio);
+    m_timer.start(refreshRateMs_);
 }
 
 void AudioEngine::initHannWindow() {

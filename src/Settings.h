@@ -1,6 +1,25 @@
 #pragma once
 
-struct Settings {
+#include <QObject>
+
+class Settings : public QObject {
+    Q_OBJECT
+
+public:
+    Q_PROPERTY(int fftSize READ getFftSize WRITE setFftSize NOTIFY fftSizeChanged)
+
+    explicit Settings(QObject *parent = nullptr);
+
+    int getFftSize() const;
+    void setFftSize(int sz);
+
+signals:
+    void fftSizeChanged(int value);
+
+public slots:
+    void handleFftSizeChange(int value);
+
+public:
     int fftSize =
     //256;
     //512;

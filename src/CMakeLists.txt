@@ -24,6 +24,7 @@ set(HEADERS
 set(SOURCES
     main.cpp
     AudioEngine.cpp
+    Settings.cpp
     SpectrumModel.cpp
     TunerModel.cpp
 )
@@ -32,6 +33,8 @@ set(QML_SOURCES
     qml/TunerScope/main.qml
     qml/TunerScope/LabelHelper.qml
     qml/TunerScope/SpectrumView.qml
+    qml/TunerScope/Settings.qml
+    qml/TunerScope/StatusView.qml
     qml/TunerScope/TunerView.qml
 )
 

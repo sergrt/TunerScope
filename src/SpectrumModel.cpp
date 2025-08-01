@@ -6,6 +6,10 @@ SpectrumModel::SpectrumModel(const Settings& settings, QObject *parent)
     , sampleRate_{settings.sampleRate} {
 }
 
+void SpectrumModel::updateFft(int fftSize) {
+    fftSize_ = fftSize;
+}
+
 int SpectrumModel::rowCount(const QModelIndex &) const {
     return spectrum_.size();
 }
@@ -31,6 +35,10 @@ QHash<int, QByteArray> SpectrumModel::roleNames() const {
 }
 
 void SpectrumModel::updateSpectrum(const QVector<float> &spectrum) {
+    static int dbg = 0;
+    ++dbg;
+    if (dbg % 10 == 0)
+        qDebug() << "Spectrum size: " << spectrum.size();
     const bool resetModel = prevSpectrumSize_ != spectrum.size();
 
     if (resetModel) {

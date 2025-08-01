@@ -16,7 +16,7 @@ int main(int argc, char *argv[]) {
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreationFailed,
         &app, []() { QCoreApplication::exit(-1); }, Qt::QueuedConnection);
 
-    Settings settings{};
+    Settings settings;
 
     AudioEngine audioEngine;
     audioEngine.Start(settings);
@@ -29,7 +29,14 @@ int main(int argc, char *argv[]) {
     QObject::connect(&audioEngine, &AudioEngine::spectrumUpdated,
                      &tunerModel, &TunerModel::updateDetectedNotes);
 
-    //qmlRegisterType<SpectrumModel>("TunerScope", 1, 0, "SpectrumModel");
+    QObject::connect(&settings, &Settings::fftSizeChanged,
+                     &audioEngine, &AudioEngine::restart);
+    QObject::connect(&settings, &Settings::fftSizeChanged,
+                     &spectrumModel, &SpectrumModel::updateFft);
+
+
+    //qmlRegisterType<Settings>("TunerScope", 1, 0, "SettingsModel");
+    engine.rootContext()->setContextProperty("settingsModel", &settings);
 
     engine.rootContext()->setContextProperty("audioEngine", &audioEngine);
     engine.rootContext()->setContextProperty("spectrumModel", &spectrumModel);
