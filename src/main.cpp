@@ -19,20 +19,32 @@ int main(int argc, char *argv[]) {
     Settings settings;
 
     AudioEngine audioEngine;
-    audioEngine.Start(settings);
+    audioEngine.UpdateSettings(settings);
+    audioEngine.Start();
 
-    SpectrumModel spectrumModel(settings);
-    TunerModel tunerModel(settings);
+    SpectrumModel spectrumModel;
+    spectrumModel.UpdateSettings(settings);
+    TunerModel tunerModel;
+    tunerModel.UpdateSettings(settings);
 
     QObject::connect(&audioEngine, &AudioEngine::spectrumUpdated,
                      &spectrumModel, &SpectrumModel::updateSpectrum);
     QObject::connect(&audioEngine, &AudioEngine::spectrumUpdated,
                      &tunerModel, &TunerModel::updateDetectedNotes);
 
-    QObject::connect(&settings, &Settings::fftSizeChanged,
-                     &audioEngine, &AudioEngine::restart);
-    QObject::connect(&settings, &Settings::fftSizeChanged,
-                     &spectrumModel, &SpectrumModel::updateFft);
+    QObject::connect(&settings, &Settings::settingsChanged,
+                     &audioEngine, [&settings, &audioEngine] {
+                        audioEngine.UpdateSettings(settings);
+                        audioEngine.restart();
+                    });
+    QObject::connect(&settings, &Settings::settingsChanged,
+                     &spectrumModel, [&settings, &spectrumModel] {
+                        spectrumModel.UpdateSettings(settings);
+                    });
+    QObject::connect(&settings, &Settings::settingsChanged,
+                     &tunerModel, [&settings, &tunerModel] {
+                         tunerModel.UpdateSettings(settings);
+                     });
 
 
     //qmlRegisterType<Settings>("TunerScope", 1, 0, "SettingsModel");

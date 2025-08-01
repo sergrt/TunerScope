@@ -1,13 +1,17 @@
 #include "SpectrumModel.h"
 
-SpectrumModel::SpectrumModel(const Settings& settings, QObject *parent)
-    : QAbstractListModel(parent)
-    , fftSize_{settings.fftSize}
-    , sampleRate_{settings.sampleRate} {
+SpectrumModel::SpectrumModel(QObject *parent)
+    : QAbstractListModel(parent) {
 }
 
-void SpectrumModel::updateFft(int fftSize) {
-    fftSize_ = fftSize;
+void SpectrumModel::UpdateSettings(const Settings& settings) {
+    sampleRate_ = settings.getSampleRate();
+    fftSize_ = settings.getFftSize();
+    ForceReset();
+}
+
+void SpectrumModel::ForceReset() {
+    prevSpectrumSize_ = 0;
 }
 
 int SpectrumModel::rowCount(const QModelIndex &) const {
@@ -35,10 +39,13 @@ QHash<int, QByteArray> SpectrumModel::roleNames() const {
 }
 
 void SpectrumModel::updateSpectrum(const QVector<float> &spectrum) {
+
+    /*
     static int dbg = 0;
     ++dbg;
     if (dbg % 10 == 0)
         qDebug() << "Spectrum size: " << spectrum.size();
+    */
     const bool resetModel = prevSpectrumSize_ != spectrum.size();
 
     if (resetModel) {
@@ -50,6 +57,7 @@ void SpectrumModel::updateSpectrum(const QVector<float> &spectrum) {
 
     if (resetModel) {
         scaleValues_.reserve(spectrum_.size());
+        scaleValues_.resize(0);
         for (int i = 0, sz = spectrum_.size(); i < sz; ++i) {
             scaleValues_.push_back( i * static_cast<float>(sampleRate_) / fftSize_);
         }

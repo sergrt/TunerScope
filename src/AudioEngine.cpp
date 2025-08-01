@@ -33,57 +33,64 @@ void TraceDevices() {
 AudioEngine::AudioEngine(QObject *parent)
     : QObject(parent) {
     TraceDevices();
+
+    connect(&m_timer, &QTimer::timeout, this, &AudioEngine::processAudio);
+
 }
 
 AudioEngine::~AudioEngine() {
     m_audioInput->stop();
 }
 
-void AudioEngine::Start(const Settings& settings) {
-    fftSize_ = settings.fftSize;
-    sampleRate_ = settings.sampleRate;
+void AudioEngine::UpdateSettings(const Settings& settings) {
+    channel_ = settings.getChannel();
+    sampleRate_ = settings.getSampleRate();
+    sampleFormat_ = settings.getSampleFormat();
+    fftSize_ = settings.getFftSize();
     refreshRateMs_ = settings.refreshRateMs;
+
+    /*
+    if (m_timer.isActive()) {
+        Stop();
+        Start();
+    }
+    */
+}
+
+QAudioFormat AudioEngine::composeAudioFormat() const {
+    QAudioFormat format{};
+    format.setSampleRate(sampleRate_);
+    int channelCount = channel_ == Settings::Channel::Both ? 2 : 1;
+    format.setChannelCount(channelCount);
+    format.setSampleFormat(sampleFormat_);
+    //format.setChannelConfig(QAudioFormat::ChannelConfigStereo);
+
+    return format;
+}
+
+void AudioEngine::Start() {
     initHannWindow();
     initPrevMagnitudes();
 
-    QAudioFormat format{};
-    format.setSampleRate(sampleRate_);
-    format.setChannelCount(2);
-    format.setSampleFormat(QAudioFormat::Float);
-    format.setChannelConfig(QAudioFormat::ChannelConfigStereo);
-
+    auto format = composeAudioFormat();
     QAudioDevice device = QMediaDevices::defaultAudioInput();
     m_audioInput = new QAudioSource(device, format, this);
     m_inputDevice = m_audioInput->start();
-    if (!m_inputDevice)
-        throw std::runtime_error("Unable to start audio input");
 
-    connect(&m_timer, &QTimer::timeout, this, &AudioEngine::processAudio);
+    if (!m_inputDevice)
+        qDebug() << "Unable to start audio input";
+
     m_timer.start(refreshRateMs_);
 }
 
-void AudioEngine::restart(int fftSize) {
+void AudioEngine::Stop() {
     m_timer.stop();
     m_audioInput->stop();
+}
 
-    fftSize_ = fftSize;
-    initHannWindow();
-    initPrevMagnitudes();
-
-    QAudioFormat format{};
-    format.setSampleRate(sampleRate_);
-    format.setChannelCount(2);
-    format.setSampleFormat(QAudioFormat::Float);
-    format.setChannelConfig(QAudioFormat::ChannelConfigStereo);
-
-    QAudioDevice device = QMediaDevices::defaultAudioInput();
-    m_audioInput = new QAudioSource(device, format, this);
-    m_inputDevice = m_audioInput->start();
-    if (!m_inputDevice)
-        throw std::runtime_error("Unable to start audio input");
-
-    //connect(&m_timer, &QTimer::timeout, this, &AudioEngine::processAudio);
-    m_timer.start(refreshRateMs_);
+void AudioEngine::restart() {
+    Stop();
+    Start();
 }
 
 void AudioEngine::initHannWindow() {
@@ -97,14 +104,29 @@ void AudioEngine::initPrevMagnitudes() {
     prevMagnitudes_.resize(fftSize_ / 2, 0.0f);
 }
 
+
+
 void AudioEngine::processAudio()
 {
-    if (!m_inputDevice->bytesAvailable())
+    if (!m_inputDevice || !m_inputDevice->bytesAvailable())
         return;
 
     auto data = m_inputDevice->readAll();
     //qDebug() << "Data size = " << data.size();
 
+    QVector<float> monoSamples;
+    if (sampleFormat_== QAudioFormat::SampleFormat::UInt8) {
+        monoSamples = ExtractData<uint8_t>(data);
+    } else if (sampleFormat_ == QAudioFormat::SampleFormat::Int16) {
+        monoSamples = ExtractData<int16_t>(data);
+    } else if (sampleFormat_ == QAudioFormat::SampleFormat::Int32) {
+        monoSamples = ExtractData<int32_t>(data);
+    } else if (sampleFormat_ == QAudioFormat::SampleFormat::Float) {
+        monoSamples = ExtractData<float>(data);
+    }
+    m_buffer.swap(monoSamples);
+
+    /*
     // downmix to mono
     const float* samples = reinterpret_cast<const float*>(data.constData());
     int frameCount = data.size() / (sizeof(float) * 2); // 2 канала
@@ -119,6 +141,7 @@ void AudioEngine::processAudio()
         monoSamples.push_back(mono);
     }
     m_buffer = std::move(monoSamples);
+    */
     computeSpectrum(m_buffer);
 }
 
@@ -196,7 +219,7 @@ void AudioEngine::computeSpectrum(const QVector<float> &buffer) {
 */
     {
         //std::valarray<std::complex<float>> data(std::complex<float>(), fftSize);
-        static std::vector<double[2]> data(fftSize_);
+        std::vector<double[2]> data(fftSize_);
         for (int i = 0; i < fftSize_; ++i) {
             data[i][0] = 0.0;
             data[i][1] = 0.0;

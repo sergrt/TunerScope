@@ -1,25 +1,81 @@
 #include "Settings.h"
 
 #include <QDebug>
-#include <QThread>
+#include <QMediaDevices>
 
 Settings::Settings(QObject *parent)
-    : QObject(parent) {
+    : QAbstractListModel(parent) {
 
+    enumerateDevices();
+}
+
+void Settings::enumerateDevices() {
+    devices_ = QMediaDevices::audioInputs();
+}
+
+int Settings::rowCount(const QModelIndex &) const {
+    return devices_.size();
+}
+
+QVariant Settings::data(const QModelIndex &index, int role) const {
+    if (!index.isValid())
+        return {};
+
+    if (role == DeviceName) {
+        return devices_[index.row()].description();
+    }
+
+    return {};
+}
+
+QHash<int, QByteArray> Settings::roleNames() const {
+    return {
+        { DeviceName, "deviceName" }
+    };
+}
+
+Settings::Channel Settings::getChannel() const {
+    return channel_;
+}
+
+void Settings::setChannel(Channel channel) {
+    channel_ = channel;
+    emit channelChanged(channel_);
+    emit settingsChanged();
+}
+
+int Settings::getSampleRate() const {
+    return sampleRate_;
+}
+
+void Settings::setSampleRate(int sampleRate) {
+    sampleRate_ = sampleRate;
+    emit sampleRateChanged(sampleRate_);
+    emit settingsChanged();
+}
+
+QAudioFormat::SampleFormat Settings::getSampleFormat() const {
+    return sampleFormat_;
+}
+
+void Settings::setSampleFormat(QAudioFormat::SampleFormat sampleFormat) {
+    sampleFormat_ = sampleFormat;
+    emit sampleFormatChanged(sampleFormat_);
+    emit settingsChanged();
 }
 
 int Settings::getFftSize() const {
-    return fftSize;
+    return fftSize_;
 }
 
 void Settings::setFftSize(int sz) {
-    fftSize = sz;
-
-    qDebug() << "setFftSize thread id = " << QThread::currentThreadId();
-    emit fftSizeChanged(fftSize);
+    fftSize_ = sz;
+    emit fftSizeChanged(fftSize_);
+    emit settingsChanged();
 }
 
 void Settings::handleFftSizeChange(int value) {
-    fftSize = value;
-    emit fftSizeChanged(value);
+    fftSize_ = value;
+    emit fftSizeChanged(fftSize_);
+    emit settingsChanged();
 }

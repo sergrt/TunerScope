@@ -72,13 +72,16 @@ std::pair<float, QString> findNextNote(float frequency) {
 
 } // namespace
 
-TunerModel::TunerModel(const Settings& settings, QObject *parent)
-    : QAbstractListModel(parent)
-    , fftSize_{settings.fftSize}
-    , sampleRate_{settings.sampleRate} {
+TunerModel::TunerModel(QObject *parent)
+    : QAbstractListModel(parent) {
 
     maxNotes_.resize(3);
     prevNotes_.resize(3);
+}
+
+void TunerModel::UpdateSettings(const Settings& settings) {
+    fftSize_ = settings.getFftSize();
+    sampleRate_ = settings.getSampleRate();
 }
 
 int TunerModel::rowCount(const QModelIndex &) const {
