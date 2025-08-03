@@ -29,7 +29,9 @@ Item {
             ComboBox {
                 Layout.fillWidth: true
                 model: settingsModel
-
+                onActivated: {
+                    settingsModel.changeDevice(currentIndex);
+                }
             }
 
             Text {

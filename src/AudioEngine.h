@@ -27,6 +27,7 @@ private slots:
 
 public slots:
     void restart();
+    void ChangeDevice(const QByteArray& id);
 
 private:
     template<typename T>
@@ -58,6 +59,7 @@ private:
     void initPrevMagnitudes();
     QAudioFormat composeAudioFormat() const;
 
+    QByteArray deviceId_{};
     QAudioSource *m_audioInput = nullptr;
     QIODevice *m_inputDevice = nullptr;
     QVector<float> m_buffer;

@@ -42,6 +42,7 @@ public:
     void setFftSize(int sz);
 
 signals:
+    void deviceChanged(const QByteArray& id);
     void channelChanged(Channel channel);
     void sampleRateChanged(int sampleRate);
     void sampleFormatChanged(QAudioFormat::SampleFormat sampleFormat);
@@ -51,6 +52,7 @@ signals:
 
 public slots:
     void handleFftSizeChange(int value);
+    void changeDevice(int index);
 
 public:
     /*

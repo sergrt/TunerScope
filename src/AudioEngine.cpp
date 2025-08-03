@@ -17,13 +17,14 @@ void TraceDevices() {
     const QList<QAudioDevice> audioDevices = QMediaDevices::audioInputs();
     for (const QAudioDevice &device : audioDevices)
     {
-        qDebug() << "ID: " << device.id() << Qt::endl;
-        qDebug() << "Description: " << device.description() << Qt::endl;
-        qDebug() << "Is default: " << (device.isDefault() ? "Yes" : "No") << Qt::endl;
-        qDebug() << "Preffered sample rate: " << device.preferredFormat().sampleRate() << Qt::endl;
-        qDebug() << "Preffered bytes per sample: " << device.preferredFormat().bytesPerFrame() << Qt::endl;
-        qDebug() << "Preffered sample format: " << device.preferredFormat().sampleFormat() << Qt::endl;
-        qDebug() << "Preffered channels count: " << device.preferredFormat().channelCount() << Qt::endl;
+        qDebug() << "ID: " << device.id();
+        qDebug() << "Description: " << device.description();
+        qDebug() << "Is default: " << (device.isDefault() ? "Yes" : "No");
+        qDebug() << "Preffered sample rate: " << device.preferredFormat().sampleRate();
+        qDebug() << "Preffered bytes per sample: " << device.preferredFormat().bytesPerFrame();
+        qDebug() << "Preffered sample format: " << device.preferredFormat().sampleFormat();
+        qDebug() << "Preffered channels count: " << device.preferredFormat().channelCount();
+        qDebug() << Qt::endl;
 
     }
 }
@@ -63,7 +64,10 @@ QAudioFormat AudioEngine::composeAudioFormat() const {
     int channelCount = channel_ == Settings::Channel::Both ? 2 : 1;
     format.setChannelCount(channelCount);
     format.setSampleFormat(sampleFormat_);
-    //format.setChannelConfig(QAudioFormat::ChannelConfigStereo);
+    if (channel_ == Settings::Channel::Both)
+        format.setChannelConfig(QAudioFormat::ChannelConfigStereo);
+    else
+        format.setChannelConfig(QAudioFormat::ChannelConfigMono);
 
     return format;
 }
@@ -74,6 +78,12 @@ void AudioEngine::Start() {
 
     auto format = composeAudioFormat();
     QAudioDevice device = QMediaDevices::defaultAudioInput();
+
+    auto devices =  QMediaDevices::audioInputs();
+    for (const auto& dev : devices) {
+        if (dev.id() == deviceId_)
+            device = dev;
+    }
     m_audioInput = new QAudioSource(device, format, this);
     m_inputDevice = m_audioInput->start();
 
@@ -91,6 +101,11 @@ void AudioEngine::Stop() {
 void AudioEngine::restart() {
     Stop();
     Start();
+}
+
+void AudioEngine::ChangeDevice(const QByteArray& id) {
+    deviceId_ = id;
+    restart();
 }
 
 void AudioEngine::initHannWindow() {

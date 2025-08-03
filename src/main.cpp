@@ -37,6 +37,11 @@ int main(int argc, char *argv[]) {
                         audioEngine.UpdateSettings(settings);
                         audioEngine.restart();
                     });
+    QObject::connect(&settings, &Settings::deviceChanged,
+                     &audioEngine, [&settings, &audioEngine](const QByteArray& id) {
+                        audioEngine.ChangeDevice(id);
+                        audioEngine.restart();
+                     });
     QObject::connect(&settings, &Settings::settingsChanged,
                      &spectrumModel, [&settings, &spectrumModel] {
                         spectrumModel.UpdateSettings(settings);
