@@ -27,7 +27,6 @@ private slots:
 
 public slots:
     void restart();
-    void ChangeDevice(const QByteArray& id);
 
 private:
     template<typename T>

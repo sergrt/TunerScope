@@ -44,6 +44,7 @@ AudioEngine::~AudioEngine() {
 }
 
 void AudioEngine::UpdateSettings(const Settings& settings) {
+    deviceId_ = settings.getDevieId();
     channel_ = settings.getChannel();
     sampleRate_ = settings.getSampleRate();
     sampleFormat_ = settings.getSampleFormat();
@@ -77,7 +78,7 @@ void AudioEngine::Start() {
     initPrevMagnitudes();
 
     auto format = composeAudioFormat();
-    QAudioDevice device = QMediaDevices::defaultAudioInput();
+    QAudioDevice device;// = QMediaDevices::defaultAudioInput();
 
     auto devices =  QMediaDevices::audioInputs();
     for (const auto& dev : devices) {
@@ -95,17 +96,15 @@ void AudioEngine::Start() {
 
 void AudioEngine::Stop() {
     m_timer.stop();
+    if (m_inputDevice)
+        m_inputDevice->close();
     m_audioInput->stop();
+    delete m_audioInput;
 }
 
 void AudioEngine::restart() {
     Stop();
     Start();
-}
-
-void AudioEngine::ChangeDevice(const QByteArray& id) {
-    deviceId_ = id;
-    restart();
 }
 
 void AudioEngine::initHannWindow() {

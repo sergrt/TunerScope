@@ -29,6 +29,8 @@ public:
     QVariant data(const QModelIndex &index, int role) const override;
     QHash<int, QByteArray> roleNames() const override;
 
+    QByteArray getDevieId() const;
+
     Channel getChannel() const;
     void setChannel(Channel channel);
 
@@ -76,6 +78,7 @@ private:
     void enumerateDevices();
 
     QList<QAudioDevice> devices_;
+    QByteArray deviceId_{};
     Channel channel_{Channel::Left};
     int sampleRate_{48000};
     QAudioFormat::SampleFormat sampleFormat_{QAudioFormat::Float};

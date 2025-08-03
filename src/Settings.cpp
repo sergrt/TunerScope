@@ -35,8 +35,13 @@ QHash<int, QByteArray> Settings::roleNames() const {
 }
 
 void Settings::changeDevice(int index) {
-    qDebug() << "index = " << index;
-    emit deviceChanged(devices_[index].id());
+    deviceId_ = devices_[index].id();
+    emit deviceChanged(deviceId_);
+    emit settingsChanged();
+}
+
+QByteArray Settings::getDevieId() const {
+    return deviceId_;
 }
 
 Settings::Channel Settings::getChannel() const {
