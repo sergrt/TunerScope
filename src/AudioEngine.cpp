@@ -311,8 +311,8 @@ void AudioEngine::computeSpectrum(const QVector<float> &buffer) {
         for (int k = 0; k < magnitudes.size(); ++k) {
             //float norm = maxMag > 0.0f ? magnitudes[k] / maxMag : 0.0f;
             //norm = powf(norm, 0.4f);
-            magnitudes[k] = 0.95f * prevMagnitudes_[k] + 0.05f * magnitudes[k];
-            //magnitudes[k] = 0.5f * m_prevMagnitudes[k] + 0.5f * magnitudes[k];
+            //magnitudes[k] = 0.95f * prevMagnitudes_[k] + 0.05f * magnitudes[k];
+            magnitudes[k] = 0.2f * prevMagnitudes_[k] + 0.8f * magnitudes[k];
             if (!qIsInf(magnitudes[k]))
                 prevMagnitudes_[k] = magnitudes[k];
         }
