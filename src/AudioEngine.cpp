@@ -49,7 +49,7 @@ void AudioEngine::UpdateSettings(const Settings& settings) {
     sampleRate_ = settings.getSampleRate();
     sampleFormat_ = settings.getSampleFormat();
     fftSize_ = settings.getFftSize();
-    refreshRateMs_ = settings.refreshRateMs;
+    refreshRateMs_ = settings.getRefreshRateMs();
 
     /*
     if (m_timer.isActive()) {
@@ -63,7 +63,7 @@ QAudioFormat AudioEngine::composeAudioFormat() const {
     QAudioFormat format{};
     format.setSampleRate(sampleRate_);
     int channelCount = channel_ == Settings::Channel::Both ? 2 : 1;
-    format.setChannelCount(channelCount);
+    //format.setChannelCount(channelCount);
     format.setSampleFormat(sampleFormat_);
     if (channel_ == Settings::Channel::Both)
         format.setChannelConfig(QAudioFormat::ChannelConfigStereo);
@@ -117,8 +117,6 @@ void AudioEngine::initHannWindow() {
 void AudioEngine::initPrevMagnitudes() {
     prevMagnitudes_.resize(fftSize_ / 2, 0.0f);
 }
-
-
 
 void AudioEngine::processAudio()
 {

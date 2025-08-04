@@ -148,8 +148,14 @@ void TunerModel::updateDetectedNotes(const QVector<float> &spectrum) {
         } else {
             maxNotes_[1] = {closestNote.second,
                             noteFreq,
-                            0.8f * prevNotes_[1].curFreq + 0.2f * frequency,
-                            0.8f * prevNotes_[1].cents + 0.2f * cents};
+                            0.2f * prevNotes_[1].curFreq + 0.8f * frequency,
+                            0.2f * prevNotes_[1].cents + 0.8f * cents};
+            /*
+            maxNotes_[1] = {closestNote.second,
+                            noteFreq,
+                            frequency,
+                            cents};
+            */
             prevNotes_[1] = maxNotes_[1];
         }
 

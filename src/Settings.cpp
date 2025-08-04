@@ -84,6 +84,10 @@ void Settings::setFftSize(int sz) {
     emit settingsChanged();
 }
 
+int Settings::getRefreshRateMs() const {
+    return refreshRateMs_;
+}
+
 void Settings::handleFftSizeChange(int value) {
     fftSize_ = value;
     emit fftSizeChanged(fftSize_);

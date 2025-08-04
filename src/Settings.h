@@ -43,6 +43,8 @@ public:
     int getFftSize() const;
     void setFftSize(int sz);
 
+    int getRefreshRateMs() const;
+
 signals:
     void deviceChanged(const QByteArray& id);
     void channelChanged(Channel channel);
@@ -72,8 +74,6 @@ public:
     //262144;
     */
 
-    int refreshRateMs = 50;
-
 private:
     void enumerateDevices();
 
@@ -83,4 +83,5 @@ private:
     int sampleRate_{48000};
     QAudioFormat::SampleFormat sampleFormat_{QAudioFormat::Float};
     int fftSize_{4096};
+    int refreshRateMs_{50};
 };
