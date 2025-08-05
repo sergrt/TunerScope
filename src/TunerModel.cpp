@@ -75,17 +75,17 @@ std::pair<float, QString> findNextNote(float frequency) {
 TunerModel::TunerModel(QObject *parent)
     : QAbstractListModel(parent) {
 
-    maxNotes_.resize(3);
-    prevNotes_.resize(3);
+    m_maxNotes.resize(3);
+    m_prevNotes.resize(3);
 }
 
 void TunerModel::UpdateSettings(const Settings& settings) {
-    fftSize_ = settings.getFftSize();
-    sampleRate_ = settings.getSampleRate();
+    m_fftSize = settings.getFftSize();
+    m_sampleRate = settings.getSampleRate();
 }
 
 int TunerModel::rowCount(const QModelIndex &) const {
-    return maxNotes_.size();
+    return m_maxNotes.size();
 }
 
 QVariant TunerModel::data(const QModelIndex &index, int role) const {
@@ -93,18 +93,18 @@ QVariant TunerModel::data(const QModelIndex &index, int role) const {
         return {};
 
     if (role == FrequencyRole)
-        return maxNotes_[index.row()].curFreq;
+        return m_maxNotes[index.row()].curFreq;
 
     if (role == NoteNameRole) {
-        return maxNotes_[index.row()].noteName;
+        return m_maxNotes[index.row()].noteName;
     }
 
     if (role == NoteFrequencyRole) {
-        return maxNotes_[index.row()].noteFreq;
+        return m_maxNotes[index.row()].noteFreq;
     }
 
     if (role == DeviationCents) {
-        return maxNotes_[index.row()].cents;
+        return m_maxNotes[index.row()].cents;
     }
 
     return {};
@@ -122,9 +122,9 @@ QHash<int, QByteArray> TunerModel::roleNames() const {
 void TunerModel::updateDetectedNotes(const QVector<float> &spectrum) {
     auto max_magnitude_iterator = std::max_element(spectrum.begin(), spectrum.end());
     auto peakIndex = std::distance(spectrum.begin(), max_magnitude_iterator);
-    auto max_magnitude_freq = std::distance(spectrum.begin(), max_magnitude_iterator) * static_cast<float>(sampleRate_) / fftSize_;
+    auto max_magnitude_freq = std::distance(spectrum.begin(), max_magnitude_iterator) * static_cast<float>(m_sampleRate) / m_fftSize;
 
-    float deltaF = static_cast<float>(sampleRate_) / fftSize_;
+    float deltaF = static_cast<float>(m_sampleRate) / m_fftSize;
 
     // parabolic peak interpolation
     if (peakIndex > 0 && peakIndex < spectrum.size() - 1) {
@@ -143,29 +143,29 @@ void TunerModel::updateDetectedNotes(const QVector<float> &spectrum) {
 
 
         // Apply prev result to smooth
-        if (prevNotes_[1].noteName.isEmpty()) {
-            prevNotes_[1] = {closestNote.second, noteFreq, frequency, cents};
+        if (m_prevNotes[1].noteName.isEmpty()) {
+            m_prevNotes[1] = {closestNote.second, noteFreq, frequency, cents};
         } else {
-            maxNotes_[1] = {closestNote.second,
+            m_maxNotes[1] = {closestNote.second,
                             noteFreq,
-                            0.2f * prevNotes_[1].curFreq + 0.8f * frequency,
-                            0.2f * prevNotes_[1].cents + 0.8f * cents};
+                            0.2f * m_prevNotes[1].curFreq + 0.8f * frequency,
+                            0.2f * m_prevNotes[1].cents + 0.8f * cents};
             /*
             maxNotes_[1] = {closestNote.second,
                             noteFreq,
                             frequency,
                             cents};
             */
-            prevNotes_[1] = maxNotes_[1];
+            m_prevNotes[1] = m_maxNotes[1];
         }
 
         auto prev = findPrevNote(frequency);
-        maxNotes_[0].noteFreq = prev.first;
-        maxNotes_[0].noteName = prev.second;
+        m_maxNotes[0].noteFreq = prev.first;
+        m_maxNotes[0].noteName = prev.second;
 
         auto next = findNextNote(frequency);
-        maxNotes_[2].noteFreq = next.first;
-        maxNotes_[2].noteName = next.second;
+        m_maxNotes[2].noteFreq = next.first;
+        m_maxNotes[2].noteName = next.second;
     }
 
     emit dataChanged(createIndex(0,0), createIndex(3,0), {FrequencyRole, NoteNameRole, NoteFrequencyRole, DeviationCents});

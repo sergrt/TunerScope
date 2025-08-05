@@ -23,7 +23,7 @@ int main(int argc, char *argv[]) {
     audioEngine.start();
 
     SpectrumModel spectrumModel;
-    spectrumModel.UpdateSettings(settings);
+    spectrumModel.updateSettings(settings);
     TunerModel tunerModel;
     tunerModel.UpdateSettings(settings);
 
@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
 
     QObject::connect(&settings, &Settings::settingsChanged,
                      &spectrumModel, [&settings, &spectrumModel] {
-                        spectrumModel.UpdateSettings(settings);
+                        spectrumModel.updateSettings(settings);
                     });
     QObject::connect(&settings, &Settings::settingsChanged,
                      &tunerModel, [&settings, &tunerModel] {

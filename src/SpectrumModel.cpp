@@ -4,18 +4,18 @@ SpectrumModel::SpectrumModel(QObject *parent)
     : QAbstractListModel(parent) {
 }
 
-void SpectrumModel::UpdateSettings(const Settings& settings) {
-    sampleRate_ = settings.getSampleRate();
-    fftSize_ = settings.getFftSize();
-    ForceReset();
+void SpectrumModel::updateSettings(const Settings& settings) {
+    m_sampleRate = settings.getSampleRate();
+    m_fftSize = settings.getFftSize();
+    forceReset();
 }
 
-void SpectrumModel::ForceReset() {
-    prevSpectrumSize_ = 0;
+void SpectrumModel::forceReset() {
+    m_prevSpectrumSize = 0;
 }
 
 int SpectrumModel::rowCount(const QModelIndex &) const {
-    return spectrum_.size();
+    return m_spectrum.size();
 }
 
 QVariant SpectrumModel::data(const QModelIndex &index, int role) const {
@@ -23,10 +23,10 @@ QVariant SpectrumModel::data(const QModelIndex &index, int role) const {
         return {};
 
     if (role == MagnitudeRole)
-        return spectrum_.value(index.row());
+        return m_spectrum.value(index.row());
 
     if (role == ScaleItemRole)
-        return scaleValues_.value(index.row());
+        return m_scaleValues.value(index.row());
 
     return {};
 }
@@ -46,26 +46,26 @@ void SpectrumModel::updateSpectrum(const QVector<float> &spectrum) {
     if (dbg % 10 == 0)
         qDebug() << "Spectrum size: " << spectrum.size();
     */
-    const bool resetModel = prevSpectrumSize_ != spectrum.size();
+    const bool resetModel = m_prevSpectrumSize != spectrum.size();
 
     if (resetModel) {
-        prevSpectrumSize_ = spectrum.size();
+        m_prevSpectrumSize = spectrum.size();
         beginResetModel();
     }
 
-    spectrum_ = spectrum;
+    m_spectrum = spectrum;
 
     if (resetModel) {
-        scaleValues_.reserve(spectrum_.size());
-        scaleValues_.resize(0);
-        for (int i = 0, sz = spectrum_.size(); i < sz; ++i) {
-            scaleValues_.push_back( i * static_cast<float>(sampleRate_) / fftSize_);
+        m_scaleValues.reserve(m_spectrum.size());
+        m_scaleValues.resize(0);
+        for (int i = 0, sz = m_spectrum.size(); i < sz; ++i) {
+            m_scaleValues.push_back( i * static_cast<float>(m_sampleRate) / m_fftSize);
         }
     }
 
     if (resetModel) {
         endResetModel();
     } else {
-        emit dataChanged(createIndex(0,0), createIndex(fftSize_,0), {MagnitudeRole, ScaleItemRole});
+        emit dataChanged(createIndex(0,0), createIndex(m_fftSize,0), {MagnitudeRole, ScaleItemRole});
     }
 }

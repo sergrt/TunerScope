@@ -33,9 +33,9 @@ private:
         float curFreq = 0.0f;
         float cents = 0.0f;
     };
-    std::vector<TuneResult> maxNotes_;
-    std::vector<TuneResult> prevNotes_{};
+    std::vector<TuneResult> m_maxNotes;
+    std::vector<TuneResult> m_prevNotes;
 
-    int fftSize_{4096};
-    int sampleRate_{48000};
+    int m_fftSize{4096};
+    int m_sampleRate{48000};
 };

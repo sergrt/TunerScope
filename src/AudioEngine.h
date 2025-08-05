@@ -33,14 +33,14 @@ private:
     QVector<float> extractData(const QByteArray& src) {
         const T* samples = reinterpret_cast<const T*>(src.constData());
         int frameCount = src.size() / sizeof(T);
-        if (channel_ == Settings::Channel::Both)
+        if (m_channel == Settings::Channel::Both)
             frameCount = src.size() / (sizeof(T) * 2); // 2 channels
 
         QVector<float> monoSamples;
         monoSamples.reserve(frameCount);
 
         for (int i = 0; i < frameCount; ++i) {
-            if (channel_ == Settings::Channel::Both) {
+            if (m_channel == Settings::Channel::Both) {
                 T left = samples[i * 2];
                 T right = samples[i * 2 + 1];
                 float mono = 0.5f * (left + right);
@@ -59,19 +59,19 @@ private:
     QAudioFormat composeAudioFormat() const;
     void computeSpectrum(const QVector<float> &buffer);
 
-    QByteArray deviceId_{};
+    QByteArray m_deviceId{};
     QAudioSource *m_audioInput = nullptr;
     QIODevice *m_inputDevice = nullptr;
     QVector<float> m_buffer;
     QTimer m_timer;
 
-    QVector<float> hannWindow_;
-    QVector<float> prevMagnitudes_;
+    QVector<float> m_hannWindow;
+    QVector<float> m_prevMagnitudes;
 
-    Settings::Channel channel_{Settings::Channel::Left};
-    int sampleRate_{48000};
-    QAudioFormat::SampleFormat sampleFormat_{QAudioFormat::SampleFormat::Float};
-    int fftSize_{16384};
-    int refreshRateMs_{50};
+    Settings::Channel m_channel{Settings::Channel::Left};
+    int m_sampleRate{48000};
+    QAudioFormat::SampleFormat m_sampleFormat{QAudioFormat::SampleFormat::Float};
+    int m_fftSize{16384};
+    int m_refreshRateMs{50};
 };
  
