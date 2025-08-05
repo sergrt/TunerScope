@@ -19,8 +19,8 @@ int main(int argc, char *argv[]) {
     Settings settings;
 
     AudioEngine audioEngine;
-    audioEngine.UpdateSettings(settings);
-    audioEngine.Start();
+    audioEngine.updateSettings(settings);
+    audioEngine.start();
 
     SpectrumModel spectrumModel;
     spectrumModel.UpdateSettings(settings);
@@ -34,7 +34,7 @@ int main(int argc, char *argv[]) {
 
     QObject::connect(&settings, &Settings::settingsChanged,
                      &audioEngine, [&settings, &audioEngine] {
-                        audioEngine.UpdateSettings(settings);
+                        audioEngine.updateSettings(settings);
                         audioEngine.restart();
                     });
 

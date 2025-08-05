@@ -43,7 +43,7 @@ AudioEngine::~AudioEngine() {
     m_audioInput->stop();
 }
 
-void AudioEngine::UpdateSettings(const Settings& settings) {
+void AudioEngine::updateSettings(const Settings& settings) {
     deviceId_ = settings.getDevieId();
     channel_ = settings.getChannel();
     sampleRate_ = settings.getSampleRate();
@@ -73,7 +73,7 @@ QAudioFormat AudioEngine::composeAudioFormat() const {
     return format;
 }
 
-void AudioEngine::Start() {
+void AudioEngine::start() {
     initHannWindow();
     initPrevMagnitudes();
 
@@ -94,7 +94,7 @@ void AudioEngine::Start() {
     m_timer.start(refreshRateMs_);
 }
 
-void AudioEngine::Stop() {
+void AudioEngine::stop() {
     m_timer.stop();
     if (m_inputDevice)
         m_inputDevice->close();
@@ -103,8 +103,8 @@ void AudioEngine::Stop() {
 }
 
 void AudioEngine::restart() {
-    Stop();
-    Start();
+    stop();
+    start();
 }
 
 void AudioEngine::initHannWindow() {
@@ -128,13 +128,13 @@ void AudioEngine::processAudio()
 
     QVector<float> monoSamples;
     if (sampleFormat_== QAudioFormat::SampleFormat::UInt8) {
-        monoSamples = ExtractData<uint8_t>(data);
+        monoSamples = extractData<uint8_t>(data);
     } else if (sampleFormat_ == QAudioFormat::SampleFormat::Int16) {
-        monoSamples = ExtractData<int16_t>(data);
+        monoSamples = extractData<int16_t>(data);
     } else if (sampleFormat_ == QAudioFormat::SampleFormat::Int32) {
-        monoSamples = ExtractData<int32_t>(data);
+        monoSamples = extractData<int32_t>(data);
     } else if (sampleFormat_ == QAudioFormat::SampleFormat::Float) {
-        monoSamples = ExtractData<float>(data);
+        monoSamples = extractData<float>(data);
     }
     m_buffer.swap(monoSamples);
 

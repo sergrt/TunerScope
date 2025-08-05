@@ -14,9 +14,9 @@ public:
     explicit AudioEngine(QObject *parent = nullptr);
     ~AudioEngine();
 
-    void Start();
-    void Stop();
-    void UpdateSettings(const Settings& settings);
+    void start();
+    void stop();
+    void updateSettings(const Settings& settings);
 
 signals:
     //void spectrumPeaks(float freq);
@@ -30,7 +30,7 @@ public slots:
 
 private:
     template<typename T>
-    QVector<float> ExtractData(const QByteArray& src) {
+    QVector<float> extractData(const QByteArray& src) {
         const T* samples = reinterpret_cast<const T*>(src.constData());
         int frameCount = src.size() / sizeof(T);
         if (channel_ == Settings::Channel::Both)
@@ -57,14 +57,13 @@ private:
     void initHannWindow();
     void initPrevMagnitudes();
     QAudioFormat composeAudioFormat() const;
+    void computeSpectrum(const QVector<float> &buffer);
 
     QByteArray deviceId_{};
     QAudioSource *m_audioInput = nullptr;
     QIODevice *m_inputDevice = nullptr;
     QVector<float> m_buffer;
     QTimer m_timer;
-
-    void computeSpectrum(const QVector<float> &buffer);
 
     QVector<float> hannWindow_;
     QVector<float> prevMagnitudes_;
