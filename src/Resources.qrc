@@ -1,0 +1,13 @@
+<!DOCTYPE RCC>
+    <RCC version="1.0">
+        <qresource prefix="/">
+        <file>qml/TunerScope/main.qml</file>
+        <file alias="main">qml/TunerScope/main.qml</file>
+		
+        <file>qml/TunerScope/LabelHelper.qml</file>
+		<file>qml/TunerScope/Settings.qml</file>
+		<file>qml/TunerScope/SpectrumView.qml</file>
+		<file>qml/TunerScope/StatusView.qml</file>
+		<file>qml/TunerScope/TunerView.qml</file>
+    </qresource>
+</RCC>

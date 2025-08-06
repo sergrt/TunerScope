@@ -8,6 +8,8 @@ Item {
     width: 300
     height: 300
 
+    
+
     /*
     SettingsModel {
         id: settingsModel

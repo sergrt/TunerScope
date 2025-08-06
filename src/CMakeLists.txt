@@ -40,14 +40,19 @@ set(QML_SOURCES
 
 set(OTHER_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.txt
+    ${CMAKE_CURRENT_SOURCE_DIR}/Resources.qrc
     ${CMAKE_CURRENT_SOURCE_DIR}/../README.md
     ${CMAKE_CURRENT_SOURCE_DIR}/../LICENSE
 )
+
+set(CMAKE_AUTORCC ON)
+qt_add_resources(QML_RESOURCES Resources.qrc)
 
 qt_add_executable(${PROJECT_NAME}
     ${HEADERS}
     ${SOURCES}
     ${OTHER_FILES}
+    ${QML_RESOURCES}
 )
 
 source_group("Headers" FILES ${HEADERS})

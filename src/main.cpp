@@ -60,8 +60,9 @@ int main(int argc, char *argv[]) {
     auto fixedFontHeight = 2 * QFontMetrics(fixedFont).height();
     engine.rootContext()->setContextProperty("fixedFontHeight", fixedFontHeight);
 
-    //engine.loadFromModule("TunerScope", "main");
-    engine.load(QUrl(QStringLiteral("TunerScope/qml/TunerScope/main.qml")));
+    //engine.loadFromModule("TunerScope", "qrc://qml/TunerScope/main.qml");
+    engine.load(QUrl(QStringLiteral("qrc:///qml/TunerScope/main.qml")));
+    //engine.load(QUrl(QStringLiteral("TunerScope/qml/TunerScope/main.qml")));
 
     if (engine.rootObjects().isEmpty())
         return -1;
