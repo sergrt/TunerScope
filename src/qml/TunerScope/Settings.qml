@@ -50,7 +50,7 @@ Item {
                 ]
                 onActivated: {
                     // Update C++ property with the selected value
-                    settingsModel.channel_ = currentValue;
+                    settingsModel.m_channel = currentValue;
                     // Or call a C++ slot
                     //settingsModel.handleFftSizeChange(currentValue);
                 }
@@ -79,7 +79,7 @@ Item {
                 ]
                 onActivated: {
                     // Update C++ property with the selected value
-                    settingsModel.sampleRate_ = currentValue;
+                    settingsModel.m_sampleRate = currentValue;
                     // Or call a C++ slot
                     //settingsModel.handleFftSizeChange(currentValue);
                 }
@@ -101,7 +101,7 @@ Item {
                 ]
                 onActivated: {
                     // Update C++ property with the selected value
-                    settingsModel.sampleFormat_ = currentValue;
+                    settingsModel.m_sampleFormat = currentValue;
                     // Or call a C++ slot
                     //settingsModel.handleFftSizeChange(currentValue);
                 }
@@ -127,7 +127,7 @@ Item {
                 ]
                 onActivated: {
                     // Update C++ property with the selected value
-                    settingsModel.fftSize_ = currentValue;
+                    settingsModel.m_fftSize = currentValue;
                     // Or call a C++ slot
                     //settingsModel.handleFftSizeChange(currentValue);
                 }

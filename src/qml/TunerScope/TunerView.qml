@@ -1,8 +1,6 @@
 import QtQuick
 import QtQuick.Shapes
 
-pragma ComponentBehavior: Bound
-
 Item {
     id: root
     anchors.fill: parent

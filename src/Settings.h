@@ -18,10 +18,10 @@ public:
         Both = 2
     };
 
-    Q_PROPERTY(Channel channel_ READ getChannel WRITE setChannel NOTIFY channelChanged)
-    Q_PROPERTY(int sampleRate_ READ getSampleRate WRITE setSampleRate NOTIFY sampleRateChanged)
-    Q_PROPERTY(QAudioFormat::SampleFormat sampleFormat_ READ getSampleFormat WRITE setSampleFormat NOTIFY sampleFormatChanged)
-    Q_PROPERTY(int fftSize_ READ getFftSize WRITE setFftSize NOTIFY fftSizeChanged)
+    Q_PROPERTY(Channel m_channel READ getChannel WRITE setChannel NOTIFY channelChanged)
+    Q_PROPERTY(int m_sampleRate READ getSampleRate WRITE setSampleRate NOTIFY sampleRateChanged)
+    Q_PROPERTY(QAudioFormat::SampleFormat m_sampleFormat READ getSampleFormat WRITE setSampleFormat NOTIFY sampleFormatChanged)
+    Q_PROPERTY(int m_fftSize READ getFftSize WRITE setFftSize NOTIFY fftSizeChanged)
 
     explicit Settings(QObject *parent = nullptr);
 
