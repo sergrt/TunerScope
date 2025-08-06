@@ -7,14 +7,18 @@ Settings::Settings(QObject *parent)
     : QAbstractListModel(parent) {
 
     enumerateDevices();
+    if (!m_devices.empty()) {
+        m_deviceId = m_devices[0].id();
+        m_deviceName = m_devices[0].description();
+    }
 }
 
 void Settings::enumerateDevices() {
-    devices_ = QMediaDevices::audioInputs();
+    m_devices = QMediaDevices::audioInputs();
 }
 
 int Settings::rowCount(const QModelIndex &) const {
-    return devices_.size();
+    return m_devices.size();
 }
 
 QVariant Settings::data(const QModelIndex &index, int role) const {
@@ -22,7 +26,7 @@ QVariant Settings::data(const QModelIndex &index, int role) const {
         return {};
 
     if (role == DeviceName) {
-        return devices_[index.row()].description();
+        return m_devices[index.row()].description();
     }
 
     return {};
@@ -35,61 +39,67 @@ QHash<int, QByteArray> Settings::roleNames() const {
 }
 
 void Settings::changeDevice(int index) {
-    deviceId_ = devices_[index].id();
-    emit deviceChanged(deviceId_);
+    m_deviceId = m_devices[index].id();
+    m_deviceName = m_devices[index].description();
+    emit deviceChanged(m_deviceId);
+    emit deviceNameChanged(m_deviceName);
     emit settingsChanged();
 }
 
-QByteArray Settings::getDevieId() const {
-    return deviceId_;
+QByteArray Settings::getDeviceId() const {
+    return m_deviceId;
+}
+
+QString Settings::getDeviceName() const {
+    return m_deviceName;
 }
 
 Settings::Channel Settings::getChannel() const {
-    return channel_;
+    return m_channel;
 }
 
 void Settings::setChannel(Channel channel) {
-    channel_ = channel;
-    emit channelChanged(channel_);
+    m_channel = channel;
+    emit channelChanged(m_channel);
     emit settingsChanged();
 }
 
 int Settings::getSampleRate() const {
-    return sampleRate_;
+    return m_sampleRate;
 }
 
 void Settings::setSampleRate(int sampleRate) {
-    sampleRate_ = sampleRate;
-    emit sampleRateChanged(sampleRate_);
+    m_sampleRate = sampleRate;
+    emit sampleRateChanged(m_sampleRate);
     emit settingsChanged();
 }
 
 QAudioFormat::SampleFormat Settings::getSampleFormat() const {
-    return sampleFormat_;
+    return m_sampleFormat;
 }
 
 void Settings::setSampleFormat(QAudioFormat::SampleFormat sampleFormat) {
-    sampleFormat_ = sampleFormat;
-    emit sampleFormatChanged(sampleFormat_);
+    m_sampleFormat = sampleFormat;
+    emit sampleFormatChanged(m_sampleFormat);
     emit settingsChanged();
 }
 
 int Settings::getFftSize() const {
-    return fftSize_;
+    return m_fftSize;
 }
 
 void Settings::setFftSize(int sz) {
-    fftSize_ = sz;
-    emit fftSizeChanged(fftSize_);
+    m_fftSize = sz;
+    emit fftSizeChanged(m_fftSize);
     emit settingsChanged();
 }
 
 int Settings::getRefreshRateMs() const {
-    return refreshRateMs_;
+    return m_refreshRateMs;
 }
 
 void Settings::handleFftSizeChange(int value) {
-    fftSize_ = value;
-    emit fftSizeChanged(fftSize_);
+    m_fftSize = value;
+    emit fftSizeChanged(m_fftSize);
     emit settingsChanged();
 }

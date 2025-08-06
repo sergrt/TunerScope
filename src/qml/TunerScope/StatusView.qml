@@ -5,22 +5,21 @@ import QtQuick.Layouts
 Item {
     id: root
     anchors.fill: parent
-
     RowLayout {
         anchors.fill: parent
 
         Text {
-            text: "Device name"
+            text: settingsModel.deviceName
             color: "lightsteelblue"
             Layout.fillWidth: true
         }
         Text {
-            text: "Sample rate"
+            text: settingsModel.sampleRate
             color: "lightsteelblue"
             Layout.alignment: Qt.AlignRight
         }
         Text {
-            text: "fft size"
+            text: settingsModel.fftSize
             color: "lightsteelblue"
             Layout.alignment: Qt.AlignRight
         }

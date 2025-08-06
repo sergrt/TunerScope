@@ -43,7 +43,7 @@ AudioEngine::~AudioEngine() {
 }
 
 void AudioEngine::updateSettings(const Settings& settings) {
-    m_deviceId = settings.getDevieId();
+    m_deviceId = settings.getDeviceId();
     m_channel = settings.getChannel();
     m_sampleRate = settings.getSampleRate();
     m_sampleFormat = settings.getSampleFormat();

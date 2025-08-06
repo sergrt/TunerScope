@@ -17,11 +17,11 @@ public:
         Right = 1,
         Both = 2
     };
-
-    Q_PROPERTY(Channel m_channel READ getChannel WRITE setChannel NOTIFY channelChanged)
-    Q_PROPERTY(int m_sampleRate READ getSampleRate WRITE setSampleRate NOTIFY sampleRateChanged)
-    Q_PROPERTY(QAudioFormat::SampleFormat m_sampleFormat READ getSampleFormat WRITE setSampleFormat NOTIFY sampleFormatChanged)
-    Q_PROPERTY(int m_fftSize READ getFftSize WRITE setFftSize NOTIFY fftSizeChanged)
+    Q_PROPERTY(QString deviceName READ getDeviceName NOTIFY deviceNameChanged)
+    Q_PROPERTY(Channel channel READ getChannel WRITE setChannel NOTIFY channelChanged)
+    Q_PROPERTY(int sampleRate READ getSampleRate WRITE setSampleRate NOTIFY sampleRateChanged)
+    Q_PROPERTY(QAudioFormat::SampleFormat sampleFormat READ getSampleFormat WRITE setSampleFormat NOTIFY sampleFormatChanged)
+    Q_PROPERTY(int fftSize READ getFftSize WRITE setFftSize NOTIFY fftSizeChanged)
 
     explicit Settings(QObject *parent = nullptr);
 
@@ -29,7 +29,8 @@ public:
     QVariant data(const QModelIndex &index, int role) const override;
     QHash<int, QByteArray> roleNames() const override;
 
-    QByteArray getDevieId() const;
+    QByteArray getDeviceId() const;
+    QString getDeviceName() const;
 
     Channel getChannel() const;
     void setChannel(Channel channel);
@@ -47,6 +48,7 @@ public:
 
 signals:
     void deviceChanged(const QByteArray& id);
+    void deviceNameChanged(const QString& deviceName);
     void channelChanged(Channel channel);
     void sampleRateChanged(int sampleRate);
     void sampleFormatChanged(QAudioFormat::SampleFormat sampleFormat);
@@ -77,11 +79,12 @@ public:
 private:
     void enumerateDevices();
 
-    QList<QAudioDevice> devices_;
-    QByteArray deviceId_{};
-    Channel channel_{Channel::Left};
-    int sampleRate_{48000};
-    QAudioFormat::SampleFormat sampleFormat_{QAudioFormat::Float};
-    int fftSize_{4096};
-    int refreshRateMs_{50};
+    QList<QAudioDevice> m_devices;
+    QByteArray m_deviceId{};
+    QString m_deviceName;
+    Channel m_channel{Channel::Left};
+    int m_sampleRate{48000};
+    QAudioFormat::SampleFormat m_sampleFormat{QAudioFormat::Float};
+    int m_fftSize{4096};
+    int m_refreshRateMs{50};
 };
