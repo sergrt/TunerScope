@@ -8,8 +8,6 @@ Item {
     width: 300
     height: 300
 
-    
-
     /*
     SettingsModel {
         id: settingsModel
@@ -31,6 +29,9 @@ Item {
             ComboBox {
                 Layout.fillWidth: true
                 model: settingsModel
+                Component.onCompleted: {
+                    currentIndex = indexOfValue(settingsModel.deviceName);
+                }
                 onActivated: {
                     settingsModel.changeDevice(currentIndex);
                 }
@@ -48,6 +49,7 @@ Item {
                     { value: 1, text: "Right" },
                     { value: 2, text: "Both (downmix to mono)" }
                 ]
+                currentIndex: settingsModel.channel
                 onActivated: {
                     // Update C++ property with the selected value
                     settingsModel.channel = currentValue;
@@ -77,6 +79,9 @@ Item {
                     { value: 352800, text: "352800" },
                     { value: 384000, text: "384000" }
                 ]
+                Component.onCompleted: {
+                    currentIndex = indexOfValue(settingsModel.sampleRate);
+                }
                 onActivated: {
                     // Update C++ property with the selected value
                     settingsModel.sampleRate = currentValue;
@@ -99,6 +104,7 @@ Item {
                     { value: 3 /*QAudioFormat.Int32*/, text: "Int32" },
                     { value: 4 /*QAudioFormat.Float*/, text: "Float" },
                 ]
+                currentIndex: settingsModel.sampleFormat
                 onActivated: {
                     // Update C++ property with the selected value
                     settingsModel.sampleFormat = currentValue;
@@ -125,6 +131,9 @@ Item {
                     { value: 32768, text: "32768" },
                     { value: 65536, text: "65536" },
                 ]
+                Component.onCompleted: {
+                    currentIndex = indexOfValue(settingsModel.fftSize);
+                }
                 onActivated: {
                     // Update C++ property with the selected value
                     settingsModel.fftSize = currentValue;

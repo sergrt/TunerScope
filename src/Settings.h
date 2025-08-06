@@ -59,6 +59,7 @@ signals:
 public slots:
     void handleFftSizeChange(int value);
     void changeDevice(int index);
+    void save();
 
 public:
     /*
@@ -78,6 +79,7 @@ public:
 
 private:
     void enumerateDevices();
+    bool load();
 
     QList<QAudioDevice> m_devices;
     QByteArray m_deviceId{};
