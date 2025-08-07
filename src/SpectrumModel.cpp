@@ -4,7 +4,7 @@ SpectrumModel::SpectrumModel(QObject *parent)
     : QAbstractListModel(parent) {
 }
 
-void SpectrumModel::updateSettings(const Settings& settings) {
+void SpectrumModel::updateFromSettings(const Settings& settings) {
     m_sampleRate = settings.getSampleRate();
     m_fftSize = settings.getFftSize();
     forceReset();
@@ -59,7 +59,7 @@ void SpectrumModel::updateSpectrum(const QVector<float> &spectrum) {
         m_scaleValues.reserve(m_spectrum.size());
         m_scaleValues.resize(0);
         for (int i = 0, sz = m_spectrum.size(); i < sz; ++i) {
-            m_scaleValues.push_back( i * static_cast<float>(m_sampleRate) / m_fftSize);
+            m_scaleValues.push_back(i * static_cast<float>(m_sampleRate) / m_fftSize);
         }
     }
 

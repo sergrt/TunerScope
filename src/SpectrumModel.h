@@ -19,7 +19,7 @@ public:
     QVariant data(const QModelIndex &index, int role) const override;
     QHash<int, QByteArray> roleNames() const override;
 
-    void updateSettings(const Settings& settings);
+    void updateFromSettings(const Settings& settings);
 
 public slots:
     void updateSpectrum(const QVector<float> &spectrum);

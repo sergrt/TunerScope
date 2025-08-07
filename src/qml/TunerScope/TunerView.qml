@@ -16,7 +16,7 @@ Item {
             id: noteDelegate
             height: closestNotesView.height
             width: closestNotesView.width / 3 //(closestNotesView.width - 2 * closestNotesView.spacing) / 3
-            y: 20 // TODO: make font as context item and calculate center properly
+            y: fixedFontHeight // TODO: make font as context item and calculate center properly
 
             Shape {
                 id: tuneMark

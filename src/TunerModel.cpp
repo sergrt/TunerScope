@@ -30,7 +30,7 @@ auto findClosestNoteIterator(float frequency) {
     size_t i = 0;
     while (i < noteMap.size()) {
         const auto& [freq, name] = noteMap[i];
-        float diff = std::abs(freq - frequency);
+        const float diff = std::abs(freq - frequency);
         if (diff < minDiff) {
             minDiff = diff;
             maxIndex = i;
@@ -51,7 +51,7 @@ std::pair<float, QString> findClosestNote(float frequency) {
 }
 
 std::pair<float, QString> findPrevNote(float frequency) {
-    auto it = findClosestNoteIterator(frequency);
+    const auto it = findClosestNoteIterator(frequency);
     if (it != noteMap.begin()) {
         return *std::prev(it);
     }
@@ -60,7 +60,7 @@ std::pair<float, QString> findPrevNote(float frequency) {
 }
 
 std::pair<float, QString> findNextNote(float frequency) {
-    auto it = findClosestNoteIterator(frequency);
+    const auto it = findClosestNoteIterator(frequency);
     if (it != noteMap.end()) {
         auto next = std::next(it);
         if (next != noteMap.end())
@@ -70,16 +70,92 @@ std::pair<float, QString> findNextNote(float frequency) {
     return {0.0f, QString("-")};
 }
 
+struct PitchEstimate {
+    float frequency;   // Оценённая фундаментальная частота
+    float score;       // Общая "сила" гармоник
+};
+
+inline float parabolicInterp(const QVector<float>& spectrum, int bin, float& interpolatedAmplitude)
+{
+    if (bin <= 0 || bin >= spectrum.size() - 1) {
+        interpolatedAmplitude = spectrum[bin];
+        return 0.0f;
+    }
+
+    float y1 = spectrum[bin - 1];
+    float y2 = spectrum[bin];
+    float y3 = spectrum[bin + 1];
+
+    float denom = y1 - 2 * y2 + y3;
+    if (denom == 0.0f) {
+        interpolatedAmplitude = y2;
+        return 0.0f;
+    }
+
+    float dx = 0.5f * (y1 - y3) / denom;
+    interpolatedAmplitude = y2 - 0.25f * (y1 - y3) * dx;
+    return dx; // смещение в пределах [-0.5..+0.5]
+}
+
+PitchEstimate estimateFundamentalHarmonicSum(
+    const QVector<float>& spectrum,
+    float sampleRate,
+    int fftSize,
+    int maxHarmonic = 5,
+    int minBin = 1,
+    int maxBin = -1)
+{
+    if (spectrum.isEmpty()) return {0.0f, 0.0f};
+
+    if (maxBin < 0 || maxBin >= spectrum.size())
+        maxBin = spectrum.size() - 1;
+
+    // Найдём пик (максимум спектра)
+    int peakBin = std::distance(spectrum.begin(), std::max_element(spectrum.begin() + minBin, spectrum.begin() + maxBin));
+    float f_peak = (sampleRate * peakBin) / fftSize;
+
+    PitchEstimate best = { f_peak, 0.0f };
+
+    for (int k = 1; k <= maxHarmonic; ++k) {
+        float f0 = f_peak / k;
+        if (f0 < 20.0f) continue;
+
+        float score = 0.0f;
+
+        for (int h = 1; h <= maxHarmonic; ++h) {
+            float harmonicFreq = f0 * h;
+            float exactBin = harmonicFreq * fftSize / sampleRate;
+            int bin = qRound(exactBin);
+
+            if (bin <= 0 || bin >= spectrum.size() - 1)
+                continue;
+
+            float interpolatedAmplitude;
+            float dx = parabolicInterp(spectrum, bin, interpolatedAmplitude);
+            float harmonicWeight = 1.0f / h;
+
+            score += interpolatedAmplitude * harmonicWeight;
+        }
+
+        if (score > best.score) {
+            best.frequency = f0;
+            best.score = score;
+        }
+    }
+
+    return best;
+}
+
 } // namespace
 
 TunerModel::TunerModel(QObject *parent)
     : QAbstractListModel(parent) {
 
-    m_maxNotes.resize(3);
+    m_maxNotes.resize(3); // [prev note] [cur note] [next note]
     m_prevNotes.resize(3);
 }
 
-void TunerModel::UpdateSettings(const Settings& settings) {
+void TunerModel::updateFromSettings(const Settings& settings) {
     m_fftSize = settings.getFftSize();
     m_sampleRate = settings.getSampleRate();
 }
@@ -120,27 +196,27 @@ QHash<int, QByteArray> TunerModel::roleNames() const {
 }
 
 void TunerModel::updateDetectedNotes(const QVector<float> &spectrum) {
-    auto max_magnitude_iterator = std::max_element(spectrum.begin(), spectrum.end());
-    auto peakIndex = std::distance(spectrum.begin(), max_magnitude_iterator);
-    auto max_magnitude_freq = std::distance(spectrum.begin(), max_magnitude_iterator) * static_cast<float>(m_sampleRate) / m_fftSize;
+    /*
+    const auto max_magnitude_iterator = std::max_element(spectrum.begin(), spectrum.end());
+    const auto peakIndex = std::distance(spectrum.begin(), max_magnitude_iterator);
+    const auto max_magnitude_freq = std::distance(spectrum.begin(), max_magnitude_iterator) * static_cast<float>(m_sampleRate) / m_fftSize;
 
-    float deltaF = static_cast<float>(m_sampleRate) / m_fftSize;
+    const float deltaF = static_cast<float>(m_sampleRate) / m_fftSize;
 
     // parabolic peak interpolation
     if (peakIndex > 0 && peakIndex < spectrum.size() - 1) {
-        double y0 = spectrum[peakIndex - 1];
-        double y1 = spectrum[peakIndex];
-        double y2 = spectrum[peakIndex + 1];
+        const double y0 = spectrum[peakIndex - 1];
+        const double y1 = spectrum[peakIndex];
+        const double y2 = spectrum[peakIndex + 1];
 
-        double delta = 0.5 * (y0 - y2) / (y0 - 2 * y1 + y2);
-        double interpolatedIndex = peakIndex + delta;
+        const double delta = 0.5 * (y0 - y2) / (y0 - 2 * y1 + y2);
+        const double interpolatedIndex = peakIndex + delta;
 
-        float frequency = interpolatedIndex * deltaF;
+        const float frequency = interpolatedIndex * deltaF;
 
-        auto closestNote = findClosestNote(frequency);
-        float noteFreq = closestNote.first;
-        float cents = 1200 * log2(frequency / noteFreq);
-
+        const auto closestNote = findClosestNote(frequency);
+        const float noteFreq = closestNote.first;
+        const float cents = 1200 * log2(frequency / noteFreq);
 
         // Apply prev result to smooth
         if (m_prevNotes[1].noteName.isEmpty()) {
@@ -148,14 +224,14 @@ void TunerModel::updateDetectedNotes(const QVector<float> &spectrum) {
         } else {
             m_maxNotes[1] = {closestNote.second,
                             noteFreq,
-                            0.2f * m_prevNotes[1].curFreq + 0.8f * frequency,
-                            0.2f * m_prevNotes[1].cents + 0.8f * cents};
-            /*
+                            0.7f * m_prevNotes[1].curFreq + 0.3f * frequency,
+                            0.7f * m_prevNotes[1].cents + 0.3f * cents};
+            / *
             maxNotes_[1] = {closestNote.second,
                             noteFreq,
                             frequency,
                             cents};
-            */
+            * /
             m_prevNotes[1] = m_maxNotes[1];
         }
 
@@ -167,6 +243,34 @@ void TunerModel::updateDetectedNotes(const QVector<float> &spectrum) {
         m_maxNotes[2].noteFreq = next.first;
         m_maxNotes[2].noteName = next.second;
     }
+    */
+
+    auto result = estimateFundamentalHarmonicSum(spectrum, m_sampleRate, m_fftSize);
+    qDebug() << "Estimated fundamental:" << result.frequency << "Hz, score:" << result.score;
+
+    auto frequency = result.frequency;
+
+    const auto closestNote = findClosestNote(frequency);
+    const float noteFreq = closestNote.first;
+    const float cents = 1200 * log2(frequency / noteFreq);
+
+    if (m_prevNotes[1].noteName.isEmpty()) {
+        m_prevNotes[1] = {closestNote.second, noteFreq, frequency, cents};
+    } else {
+        m_maxNotes[1] = {closestNote.second,
+                         noteFreq,
+                         0.7f * m_prevNotes[1].curFreq + 0.3f * frequency,
+                         0.7f * m_prevNotes[1].cents + 0.3f * cents};
+        m_prevNotes[1] = m_maxNotes[1];
+    }
+
+    auto prev = findPrevNote(frequency);
+    m_maxNotes[0].noteFreq = prev.first;
+    m_maxNotes[0].noteName = prev.second;
+
+    auto next = findNextNote(frequency);
+    m_maxNotes[2].noteFreq = next.first;
+    m_maxNotes[2].noteName = next.second;
 
     emit dataChanged(createIndex(0,0), createIndex(3,0), {FrequencyRole, NoteNameRole, NoteFrequencyRole, DeviationCents});
 }

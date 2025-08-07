@@ -1,11 +1,11 @@
 #include "AudioEngine.h"
 
 #include <QAudioFormat>
-#include <QMediaDevices>
-#include <QtMath>
-#include <QList>
-#include <QTextStream>
 #include <QDebug>
+#include <QMediaDevices>
+#include <QList>
+#include <QtMath>
+#include <QTextStream>
 
 #include <fftw3.h>
 
@@ -25,16 +25,67 @@ void TraceDevices() {
         qDebug() << "Preffered sample format: " << device.preferredFormat().sampleFormat();
         qDebug() << "Preffered channels count: " << device.preferredFormat().channelCount();
         qDebug() << Qt::endl;
-
     }
+}
+
+void fft(std::vector<double[2]> &data, int fftSize) {
+    fftw_complex *in, *out;
+    fftw_plan p;
+    const int N = fftSize; //data.size();
+
+            //in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * N);
+
+            //for (int i = 0; i < N; ++i) {
+            //    in[i][0] = data[i].real();
+            //    in[i][1] = data[i].imag();
+            //}
+
+            //out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * N);
+            //p = fftw_plan_dft_1d(N, in, out, FFTW_FORWARD, FFTW_ESTIMATE);
+    p = fftw_plan_dft_1d(N, static_cast<fftw_complex*>(data.data()), data.data(), FFTW_FORWARD, FFTW_ESTIMATE);
+
+    fftw_execute(p); /* repeat as needed */
+
+    fftw_destroy_plan(p);
+    /*
+    data.resize(N);
+    for (int i = 0; i < N; ++i) {
+        data[i] = std::complex<float>(out[i][0], out[i][1]);
+    }
+    */
+    //fftw_free(in);
+
+
+
+            //fftw_free(out);
+
+    return;
+    /*
+
+
+     const size_t n = data.size();
+     if (n <= 1) return;
+
+      std::valarray<std::complex<float>> even = data[std::slice(0, n / 2, 2)];
+      std::valarray<std::complex<float>>  odd = data[std::slice(1, n / 2, 2)];
+
+     fft(even);
+     fft(odd);
+
+      for (size_t k = 0; k < n / 2; ++k) {
+          std::complex<float> t = std::polar(1.0f, static_cast<float>(-2.0f * M_PI * k / n)) * odd[k];
+          data[k] = even[k] + t;
+          data[k + n/2] = even[k] - t;
+      }
+  */
 }
 
 } // namespace
 
 AudioEngine::AudioEngine(QObject *parent)
     : QObject(parent) {
-    TraceDevices();
 
+    TraceDevices();
     connect(&m_timer, &QTimer::timeout, this, &AudioEngine::processAudio);
 }
 
@@ -42,27 +93,20 @@ AudioEngine::~AudioEngine() {
     m_audioInput->stop();
 }
 
-void AudioEngine::updateSettings(const Settings& settings) {
+void AudioEngine::updateFromSettings(const Settings& settings) {
     m_deviceId = settings.getDeviceId();
     m_channel = settings.getChannel();
     m_sampleRate = settings.getSampleRate();
     m_sampleFormat = settings.getSampleFormat();
     m_fftSize = settings.getFftSize();
     m_refreshRateMs = settings.getRefreshRateMs();
-
-    /*
-    if (m_timer.isActive()) {
-        Stop();
-        Start();
-    }
-    */
 }
 
 QAudioFormat AudioEngine::composeAudioFormat() const {
     QAudioFormat format{};
     format.setSampleRate(m_sampleRate);
     int channelCount = m_channel == Settings::Channel::Both ? 2 : 1;
-    //format.setChannelCount(channelCount);
+    format.setChannelCount(channelCount); // TODO: determine whether it is needed
     format.setSampleFormat(m_sampleFormat);
     if (m_channel == Settings::Channel::Both)
         format.setChannelConfig(QAudioFormat::ChannelConfigStereo);
@@ -77,28 +121,31 @@ void AudioEngine::start() {
     initPrevMagnitudes();
 
     auto format = composeAudioFormat();
-    QAudioDevice device;// = QMediaDevices::defaultAudioInput();
+    QAudioDevice device{};
 
     auto devices =  QMediaDevices::audioInputs();
-    for (const auto& dev : devices) {
+    for (const auto& dev : std::as_const(devices)) {
         if (dev.id() == m_deviceId)
             device = dev;
     }
-    m_audioInput = new QAudioSource(device, format, this);
+    m_audioInput.reset(new QAudioSource(device, format, this));
     m_inputDevice = m_audioInput->start();
 
-    if (!m_inputDevice)
-        qDebug() << "Unable to start audio input";
+    if (!m_inputDevice) {
+        qCritical("Unable to start audio input");
+        return;
+    }
 
     m_timer.start(m_refreshRateMs);
 }
 
 void AudioEngine::stop() {
     m_timer.stop();
+
     if (m_inputDevice)
         m_inputDevice->close();
+
     m_audioInput->stop();
-    delete m_audioInput;
 }
 
 void AudioEngine::restart() {
@@ -136,76 +183,7 @@ void AudioEngine::processAudio()
         monoSamples = extractData<float>(data);
     }
     m_buffer.swap(monoSamples);
-
-    /*
-    // downmix to mono
-    const float* samples = reinterpret_cast<const float*>(data.constData());
-    int frameCount = data.size() / (sizeof(float) * 2); // 2 канала
-
-    QVector<float> monoSamples;
-    monoSamples.reserve(frameCount);
-
-    for (int i = 0; i < frameCount; ++i) {
-        float left = samples[i * 2];
-        float right = samples[i * 2 + 1];
-        float mono = 0.5f * (left + right);
-        monoSamples.push_back(mono);
-    }
-    m_buffer = std::move(monoSamples);
-    */
     computeSpectrum(m_buffer);
-}
-
-void fft(std::vector<double[2]> &data, int fftSize) {
-    fftw_complex *in, *out;
-    fftw_plan p;
-    const int N = fftSize; //data.size();
-
-    //in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * N);
-
-    //for (int i = 0; i < N; ++i) {
-    //    in[i][0] = data[i].real();
-    //    in[i][1] = data[i].imag();
-    //}
-
-    //out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * N);
-    //p = fftw_plan_dft_1d(N, in, out, FFTW_FORWARD, FFTW_ESTIMATE);
-    p = fftw_plan_dft_1d(N, static_cast<fftw_complex*>(data.data()), data.data(), FFTW_FORWARD, FFTW_ESTIMATE);
-
-    fftw_execute(p); /* repeat as needed */
-
-    fftw_destroy_plan(p);
-    /*
-    data.resize(N);
-    for (int i = 0; i < N; ++i) {
-        data[i] = std::complex<float>(out[i][0], out[i][1]);
-    }
-    */
-    //fftw_free(in);
-
-
-
-    //fftw_free(out);
-
-    return;
-    /*
-
-
-    const size_t n = data.size();
-    if (n <= 1) return;
-
-    std::valarray<std::complex<float>> even = data[std::slice(0, n / 2, 2)];
-    std::valarray<std::complex<float>>  odd = data[std::slice(1, n / 2, 2)];
-
-    fft(even);
-    fft(odd);
-
-    for (size_t k = 0; k < n / 2; ++k) {
-        std::complex<float> t = std::polar(1.0f, static_cast<float>(-2.0f * M_PI * k / n)) * odd[k];
-        data[k] = even[k] + t;
-        data[k + n/2] = even[k] - t;
-    }
-*/
 }
 
 void AudioEngine::computeSpectrum(const QVector<float> &buffer) {
@@ -309,7 +287,7 @@ void AudioEngine::computeSpectrum(const QVector<float> &buffer) {
             //float norm = maxMag > 0.0f ? magnitudes[k] / maxMag : 0.0f;
             //norm = powf(norm, 0.4f);
             //magnitudes[k] = 0.95f * prevMagnitudes_[k] + 0.05f * magnitudes[k];
-            magnitudes[k] = 0.2f * m_prevMagnitudes[k] + 0.8f * magnitudes[k];
+            magnitudes[k] = 0.5f * m_prevMagnitudes[k] + 0.5f * magnitudes[k];
             if (!qIsInf(magnitudes[k]))
                 m_prevMagnitudes[k] = magnitudes[k];
         }

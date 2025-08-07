@@ -42,8 +42,8 @@ Item {
             }
             ComboBox {
                 Layout.fillWidth: true
-                textRole: "text" // Role for display text
-                valueRole: "value" // Role for the actual value to pass to C++
+                textRole: "text"
+                valueRole: "value"
                 model: [
                     { value: 0, text: "Left" },
                     { value: 1, text: "Right" },
@@ -51,9 +51,8 @@ Item {
                 ]
                 currentIndex: settingsModel.channel
                 onActivated: {
-                    // Update C++ property with the selected value
                     settingsModel.channel = currentValue;
-                    // Or call a C++ slot
+                    // INFO: for reference how to call c++ slot
                     //settingsModel.handleFftSizeChange(currentValue);
                 }
             }
@@ -63,8 +62,8 @@ Item {
             }
             ComboBox {
                 Layout.fillWidth: true
-                textRole: "text" // Role for display text
-                valueRole: "value" // Role for the actual value to pass to C++
+                textRole: "text"
+                valueRole: "value"
                 model: [
                     { value: 8000, text: "8000" },
                     { value: 11025, text: "11025" },
@@ -83,10 +82,7 @@ Item {
                     currentIndex = indexOfValue(settingsModel.sampleRate);
                 }
                 onActivated: {
-                    // Update C++ property with the selected value
                     settingsModel.sampleRate = currentValue;
-                    // Or call a C++ slot
-                    //settingsModel.handleFftSizeChange(currentValue);
                 }
             }
 
@@ -95,8 +91,8 @@ Item {
             }
             ComboBox {
                 Layout.fillWidth: true
-                textRole: "text" // Role for display text
-                valueRole: "value" // Role for the actual value to pass to C++
+                textRole: "text"
+                valueRole: "value"
                 model: [
                     { value: 0 /*QAudioFormat.Unknown*/, text: "Default" },
                     { value: 1 /*QAudioFormat.UInt8*/, text: "UInt8" },
@@ -106,10 +102,7 @@ Item {
                 ]
                 currentIndex: settingsModel.sampleFormat
                 onActivated: {
-                    // Update C++ property with the selected value
                     settingsModel.sampleFormat = currentValue;
-                    // Or call a C++ slot
-                    //settingsModel.handleFftSizeChange(currentValue);
                 }
             }
 
@@ -118,8 +111,8 @@ Item {
             }
             ComboBox {
                 Layout.fillWidth: true
-                textRole: "text" // Role for display text
-                valueRole: "value" // Role for the actual value to pass to C++
+                textRole: "text"
+                valueRole: "value"
                 model: [
                     { value: 256, text: "256" },
                     { value: 512, text: "512" },
@@ -135,10 +128,7 @@ Item {
                     currentIndex = indexOfValue(settingsModel.fftSize);
                 }
                 onActivated: {
-                    // Update C++ property with the selected value
                     settingsModel.fftSize = currentValue;
-                    // Or call a C++ slot
-                    //settingsModel.handleFftSizeChange(currentValue);
                 }
             }
 
@@ -150,6 +140,5 @@ Item {
                 }
             }
         }
-
     }
 }

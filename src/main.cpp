@@ -1,31 +1,28 @@
+#include "AudioEngine.h"
+#include "Settings.h"
+#include "SpectrumModel.h"
+#include "TunerModel.h"
+
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
 #include <QFontDatabase>
 #include <QFontMetrics>
 
-#include "AudioEngine.h"
-#include "Settings.h"
-#include "SpectrumModel.h"
-#include "TunerModel.h"
-
-
 int main(int argc, char *argv[]) {
     QGuiApplication app(argc, argv);
     QQmlApplicationEngine engine;
+
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreationFailed,
-        &app, []() { QCoreApplication::exit(-1); }, Qt::QueuedConnection);
+                     &app, []() { QCoreApplication::exit(-1); }, Qt::QueuedConnection);
 
-    Settings settings;
-
-    AudioEngine audioEngine;
-    audioEngine.updateSettings(settings);
-    audioEngine.start();
-
+    Settings settings{};
+    AudioEngine audioEngine{};
+    audioEngine.updateFromSettings(settings);
     SpectrumModel spectrumModel;
-    spectrumModel.updateSettings(settings);
+    spectrumModel.updateFromSettings(settings);
     TunerModel tunerModel;
-    tunerModel.UpdateSettings(settings);
+    tunerModel.updateFromSettings(settings);
 
     QObject::connect(&audioEngine, &AudioEngine::spectrumUpdated,
                      &spectrumModel, &SpectrumModel::updateSpectrum);
@@ -34,38 +31,38 @@ int main(int argc, char *argv[]) {
 
     QObject::connect(&settings, &Settings::settingsChanged,
                      &audioEngine, [&settings, &audioEngine] {
-                        audioEngine.updateSettings(settings);
+                        audioEngine.updateFromSettings(settings);
                         audioEngine.restart();
                     });
 
     QObject::connect(&settings, &Settings::settingsChanged,
                      &spectrumModel, [&settings, &spectrumModel] {
-                        spectrumModel.updateSettings(settings);
+                        spectrumModel.updateFromSettings(settings);
                     });
+
     QObject::connect(&settings, &Settings::settingsChanged,
                      &tunerModel, [&settings, &tunerModel] {
-                         tunerModel.UpdateSettings(settings);
+                         tunerModel.updateFromSettings(settings);
                      });
 
-
-    //qmlRegisterType<Settings>("TunerScope", 1, 0, "SettingsModel");
     engine.rootContext()->setContextProperty("settingsModel", &settings);
-
     engine.rootContext()->setContextProperty("audioEngine", &audioEngine);
     engine.rootContext()->setContextProperty("spectrumModel", &spectrumModel);
     engine.rootContext()->setContextProperty("tunerModel", &tunerModel);
 
     QFont fixedFont = QFontDatabase::systemFont(QFontDatabase::SmallestReadableFont);
     engine.rootContext()->setContextProperty("fixedFont", fixedFont);
-    auto fixedFontHeight = 2 * QFontMetrics(fixedFont).height();
+    const auto fixedFontHeight = 2 * QFontMetrics(fixedFont).height();
     engine.rootContext()->setContextProperty("fixedFontHeight", fixedFontHeight);
 
-    //engine.loadFromModule("TunerScope", "qrc://qml/TunerScope/main.qml");
-    engine.load(QUrl(QStringLiteral("qrc:///qml/TunerScope/main.qml")));
-    //engine.load(QUrl(QStringLiteral("TunerScope/qml/TunerScope/main.qml")));
+    audioEngine.start();
 
-    if (engine.rootObjects().isEmpty())
+    engine.load(QUrl(QStringLiteral("qrc:///qml/TunerScope/main.qml")));
+
+    if (engine.rootObjects().isEmpty()) {
+        qCritical("Unable to start engine");
         return -1;
+    }
 
     return app.exec();
 }

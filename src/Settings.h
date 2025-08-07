@@ -17,6 +17,7 @@ public:
         Right = 1,
         Both = 2
     };
+
     Q_PROPERTY(QString deviceName READ getDeviceName NOTIFY deviceNameChanged)
     Q_PROPERTY(Channel channel READ getChannel WRITE setChannel NOTIFY channelChanged)
     Q_PROPERTY(int sampleRate READ getSampleRate WRITE setSampleRate NOTIFY sampleRateChanged)
@@ -60,22 +61,6 @@ public slots:
     void handleFftSizeChange(int value);
     void changeDevice(int index);
     void save();
-
-public:
-    /*
-    int fftSize =
-    //256;
-    //512;
-    //1024;
-    2048;
-    //4096;
-    //8192;
-    //16384;
-    //32768;
-    //65536;
-    //131072;
-    //262144;
-    */
 
 private:
     void enumerateDevices();

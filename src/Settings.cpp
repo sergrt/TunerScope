@@ -19,6 +19,7 @@ Settings::Settings(QObject *parent)
     QObject::connect(this, &Settings::settingsChanged, this, &Settings::save);
 
     enumerateDevices();
+
     if (!m_devices.empty()) {
         m_deviceId = m_devices[0].id();
         m_deviceName = m_devices[0].description();
@@ -56,6 +57,7 @@ QHash<int, QByteArray> Settings::roleNames() const {
 void Settings::changeDevice(int index) {
     m_deviceId = m_devices[index].id();
     m_deviceName = m_devices[index].description();
+
     emit deviceChanged(m_deviceId);
     emit deviceNameChanged(m_deviceName);
     emit settingsChanged();
@@ -75,6 +77,7 @@ Settings::Channel Settings::getChannel() const {
 
 void Settings::setChannel(Channel channel) {
     m_channel = channel;
+
     emit channelChanged(m_channel);
     emit settingsChanged();
 }
@@ -85,6 +88,7 @@ int Settings::getSampleRate() const {
 
 void Settings::setSampleRate(int sampleRate) {
     m_sampleRate = sampleRate;
+
     emit sampleRateChanged(m_sampleRate);
     emit settingsChanged();
 }
@@ -95,6 +99,7 @@ QAudioFormat::SampleFormat Settings::getSampleFormat() const {
 
 void Settings::setSampleFormat(QAudioFormat::SampleFormat sampleFormat) {
     m_sampleFormat = sampleFormat;
+
     emit sampleFormatChanged(m_sampleFormat);
     emit settingsChanged();
 }
@@ -105,6 +110,7 @@ int Settings::getFftSize() const {
 
 void Settings::setFftSize(int sz) {
     m_fftSize = sz;
+
     emit fftSizeChanged(m_fftSize);
     emit settingsChanged();
 }
@@ -115,6 +121,7 @@ int Settings::getRefreshRateMs() const {
 
 void Settings::handleFftSizeChange(int value) {
     m_fftSize = value;
+
     emit fftSizeChanged(m_fftSize);
     emit settingsChanged();
 }
