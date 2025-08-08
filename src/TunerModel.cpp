@@ -75,64 +75,60 @@ struct PitchEstimate {
     float score;       // Общая "сила" гармоник
 };
 
-inline float parabolicInterp(const QVector<float>& spectrum, int bin, float& interpolatedAmplitude)
-{
+float parabolicInterpolation(const QVector<float>& spectrum, int bin, float& interpolatedAmplitude) {
     if (bin <= 0 || bin >= spectrum.size() - 1) {
         interpolatedAmplitude = spectrum[bin];
         return 0.0f;
     }
 
-    float y1 = spectrum[bin - 1];
-    float y2 = spectrum[bin];
-    float y3 = spectrum[bin + 1];
+    const float y1 = spectrum[bin - 1];
+    const float y2 = spectrum[bin];
+    const float y3 = spectrum[bin + 1];
 
-    float denom = y1 - 2 * y2 + y3;
-    if (denom == 0.0f) {
+    const float denom = y1 - 2 * y2 + y3;
+    if (qFuzzyCompare(denom, 0.0f)) {
         interpolatedAmplitude = y2;
         return 0.0f;
     }
 
-    float dx = 0.5f * (y1 - y3) / denom;
+    const float dx = 0.5f * (y1 - y3) / denom;
     interpolatedAmplitude = y2 - 0.25f * (y1 - y3) * dx;
-    return dx; // смещение в пределах [-0.5..+0.5]
+    return dx; // difference in range [-0.5..+0.5]
 }
 
-PitchEstimate estimateFundamentalHarmonicSum(
-    const QVector<float>& spectrum,
-    float sampleRate,
-    int fftSize,
-    int maxHarmonic = 5,
-    int minBin = 1,
-    int maxBin = -1)
-{
-    if (spectrum.isEmpty()) return {0.0f, 0.0f};
+PitchEstimate estimateFundamentalHarmonicSum(const QVector<float>& spectrum, float sampleRate, int fftSize, int maxHarmonic = 5, int minBin = 1, int maxBin = -1) {
+    if (spectrum.isEmpty())
+        return PitchEstimate{0.0f, 0.0f};
 
     if (maxBin < 0 || maxBin >= spectrum.size())
         maxBin = spectrum.size() - 1;
 
-    // Найдём пик (максимум спектра)
-    int peakBin = std::distance(spectrum.begin(), std::max_element(spectrum.begin() + minBin, spectrum.begin() + maxBin));
-    float f_peak = (sampleRate * peakBin) / fftSize;
+    // Find peak
+    const int peakBin = std::distance(spectrum.begin(), std::max_element(spectrum.begin() + minBin, spectrum.begin() + maxBin));
+    const float peakFrequency = (sampleRate * peakBin) / fftSize;
 
-    PitchEstimate best = { f_peak, 0.0f };
+    PitchEstimate best = { peakFrequency, 0.0f };
 
     for (int k = 1; k <= maxHarmonic; ++k) {
-        float f0 = f_peak / k;
-        if (f0 < 20.0f) continue;
+        const float f0 = peakFrequency / k;
+        if (f0 < 20.0f)
+            continue;
 
         float score = 0.0f;
 
         for (int h = 1; h <= maxHarmonic; ++h) {
-            float harmonicFreq = f0 * h;
-            float exactBin = harmonicFreq * fftSize / sampleRate;
-            int bin = qRound(exactBin);
+            const float harmonicFreq = f0 * h;
+            const float exactBin = harmonicFreq * fftSize / sampleRate;
+            const int bin = qRound(exactBin);
 
             if (bin <= 0 || bin >= spectrum.size() - 1)
                 continue;
 
-            float interpolatedAmplitude;
-            float dx = parabolicInterp(spectrum, bin, interpolatedAmplitude);
-            float harmonicWeight = 1.0f / h;
+            float interpolatedAmplitude{0.0f};
+            float dx = parabolicInterpolation(spectrum, bin, interpolatedAmplitude);
+            Q_UNUSED(dx);
+            //qDebug() << "dx: " << dx;
+            const float harmonicWeight = 1.0f / h;
 
             score += interpolatedAmplitude * harmonicWeight;
         }
@@ -257,10 +253,11 @@ void TunerModel::updateDetectedNotes(const QVector<float> &spectrum) {
     if (m_prevNotes[1].noteName.isEmpty()) {
         m_prevNotes[1] = {closestNote.second, noteFreq, frequency, cents};
     } else {
+        static const float kPrevNotesWeight = 0.7f;
         m_maxNotes[1] = {closestNote.second,
                          noteFreq,
-                         0.7f * m_prevNotes[1].curFreq + 0.3f * frequency,
-                         0.7f * m_prevNotes[1].cents + 0.3f * cents};
+                         kPrevNotesWeight * m_prevNotes[1].curFreq + (1.0f - kPrevNotesWeight) * frequency,
+                         kPrevNotesWeight * m_prevNotes[1].cents + (1.0f - kPrevNotesWeight) * cents};
         m_prevNotes[1] = m_maxNotes[1];
     }
 
