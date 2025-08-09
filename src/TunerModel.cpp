@@ -73,6 +73,9 @@ std::pair<float, QString> findNextNote(float frequency) {
 struct PitchEstimate {
     float frequency;   // Оценённая фундаментальная частота
     float score;       // Общая "сила" гармоник
+
+    int bestK = 1;          // какая гармоника использована (k)
+    int peakBin = 0;        // бин первоначального пика
 };
 
 float parabolicInterpolation(const QVector<float>& spectrum, int bin, float& interpolatedAmplitude) {
@@ -95,7 +98,7 @@ float parabolicInterpolation(const QVector<float>& spectrum, int bin, float& int
     interpolatedAmplitude = y2 - 0.25f * (y1 - y3) * dx;
     return dx; // difference in range [-0.5..+0.5]
 }
-
+/*
 PitchEstimate estimateFundamentalHarmonicSum(const QVector<float>& spectrum, float sampleRate, int fftSize, int maxHarmonic = 5, int minBin = 1, int maxBin = -1) {
     if (spectrum.isEmpty())
         return PitchEstimate{0.0f, 0.0f};
@@ -141,7 +144,111 @@ PitchEstimate estimateFundamentalHarmonicSum(const QVector<float>& spectrum, flo
 
     return best;
 }
+*/
+PitchEstimate estimateFundamentalHarmonicSum(
+    const QVector<float> &spectrum,
+    double sampleRate,
+    int fftSize,
+    int maxHarmonics = 6,
+    double minFreq = 40.0,
+    double maxFreq = 1000.0,
+    bool debug = false)
+{
+    PitchEstimate result;
+    if (spectrum.isEmpty() || fftSize <= 0 || sampleRate <= 0.0) return result;
 
+    const int specSize = spectrum.size();            // обычно fftSize/2
+    // Преобразуем частотные границы в бины (ограничиваем в пределах спектра)
+    int binMin = qMax(1, int(std::floor(minFreq * fftSize / sampleRate)));
+    int binMax = int(std::ceil(maxFreq * fftSize / sampleRate));
+    binMax = qMin(binMax, specSize - 1);
+    if (binMin >= binMax) {
+        // Неправильные входные параметры
+        if (debug) qDebug() << "estimateFundamental: invalid bin range" << binMin << binMax;
+        return result;
+    }
+
+            // Находим локальный сильнейший пик в диапазоне (начальная точка)
+    int peakBin = binMin;
+    {
+        auto it = std::max_element(spectrum.begin() + binMin, spectrum.begin() + binMax + 1);
+        peakBin = std::distance(spectrum.begin(), it);
+    }
+    double peakFreq = (double)peakBin * sampleRate / fftSize;
+    if (debug) qDebug() << "initial peakBin" << peakBin << "peakFreq" << peakFreq;
+
+            // Ограничение на k: не будем делить на k, если f0 окажется < minFreq
+    int maxK = std::min(maxHarmonics, int(std::floor(peakFreq / minFreq)));
+    maxK = qMax(1, maxK);
+
+    double bestScore = -1.0;
+    int bestK = 1;
+    double bestF0 = peakFreq;
+
+            // Для каждого кандидата k (предположение: peakBin = k * f0_bin)
+    for (int k = 1; k <= maxK; ++k) {
+        double f0 = peakFreq / k;
+        if (f0 < minFreq || f0 > maxFreq) continue;
+
+        double score = 0.0;
+        // пробегаем гармоники
+        for (int h = 1; h <= maxHarmonics; ++h) {
+            double hFreq = f0 * h;
+            double exactBin = hFreq * fftSize / sampleRate;
+            int bin = int(std::floor(exactBin + 0.5)); // ближайший бин
+
+            if (bin <= 0 || bin >= specSize - 1) break; // вне спектра
+
+            float amp;
+            double dx = parabolicInterpolation(spectrum, bin, amp);
+            // Можно учитывать небольшое смещение: refinedBin = bin + dx
+            // weight: уменьшаем вклад старших гармоник
+            double weight = 1.0 / h;
+            score += amp * weight;
+        }
+
+        if (score > bestScore) {
+            bestScore = score;
+            bestK = k;
+            bestF0 = f0;
+        }
+    }
+
+            // Если ничего не подобралось (вдруг), вернём пиковую
+    if (bestScore < 0.0) {
+        bestScore = spectrum[peakBin];
+        bestF0 = peakFreq;
+        bestK = 1;
+    }
+
+            // Финальная доработка: уточним bestF0 через интерполяцию вокруг соответствующего бина
+            // найдем бин для bestF0:
+    double bestExactBin = bestF0 * fftSize / sampleRate;
+    int bestBin = int(std::floor(bestExactBin + 0.5));
+    float finalAmp = 0.0;
+    double dxFinal = 0.0;
+    if (bestBin > 0 && bestBin < specSize - 1) {
+        dxFinal = parabolicInterpolation(spectrum, bestBin, finalAmp);
+    }
+    double refinedF0 = (bestBin + dxFinal) * sampleRate / fftSize;
+
+    result.frequency = refinedF0;
+    result.score = bestScore;
+    result.bestK = bestK;
+    result.peakBin = peakBin;
+
+    if (debug) {
+        qDebug() << "estimateFundamental: bestK" << bestK
+                 << "peakBin" << peakBin
+                 << "bestF0(orig)" << bestF0
+                 << "bestBin" << bestBin
+                 << "dxFinal" << dxFinal
+                 << "refinedF0" << refinedF0
+                 << "score" << bestScore;
+    }
+
+    return result;
+}
 } // namespace
 
 TunerModel::TunerModel(QObject *parent)
@@ -242,18 +349,20 @@ void TunerModel::updateDetectedNotes(const QVector<float> &spectrum) {
     */
 
     auto result = estimateFundamentalHarmonicSum(spectrum, m_sampleRate, m_fftSize);
-    qDebug() << "Estimated fundamental:" << result.frequency << "Hz, score:" << result.score;
+    //qDebug() << "Estimated fundamental:" << result.frequency << "Hz, score:" << result.score;
 
     auto frequency = result.frequency;
 
     const auto closestNote = findClosestNote(frequency);
     const float noteFreq = closestNote.first;
-    const float cents = 1200 * log2(frequency / noteFreq);
-
+    float cents = 1200 * log2(frequency / noteFreq);
+    if (!std::isfinite(cents))
+        cents = 0.0f;
+    qDebug() << "Cents = " << cents;
     if (m_prevNotes[1].noteName.isEmpty()) {
         m_prevNotes[1] = {closestNote.second, noteFreq, frequency, cents};
     } else {
-        static const float kPrevNotesWeight = 0.7f;
+        static const float kPrevNotesWeight = 0.88f;
         m_maxNotes[1] = {closestNote.second,
                          noteFreq,
                          kPrevNotesWeight * m_prevNotes[1].curFreq + (1.0f - kPrevNotesWeight) * frequency,

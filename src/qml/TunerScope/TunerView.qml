@@ -29,18 +29,20 @@ Item {
                     fillColor: "orange"
                     fillRule: ShapePath.OddEvenFill
 
+                    property real centsScale: (root.width / 3) / noteDelegate.width // TODO: check
+
                     PathPolyline {
                             //path: [ Qt.point(root.width / 3 / 2 + cents, tuneMarkShapePath.strokeWidth),
                             //        Qt.point(root.width / 3 / 2 + cents, closestNotesView.height) ]
-                            path: [ Qt.point(root.width / 3 / 2 + cents, tuneMarkShapePath.strokeWidth),
-                                    Qt.point(root.width / 3 / 2 + cents, noteText.height) ]
+                            path: [ Qt.point(root.width / 3 / 2 + cents * tuneMarkShapePath.centsScale, tuneMarkShapePath.strokeWidth),
+                                    Qt.point(root.width / 3 / 2 + cents * tuneMarkShapePath.centsScale, noteText.height) ]
                     }
 
                     PathPolyline {
                             //path: [ Qt.point(root.width / 3 / 2 + cents, tuneMarkShapePath.strokeWidth),
                             //        Qt.point(root.width / 3 / 2 + cents, closestNotesView.height) ]
-                            path: [ Qt.point(root.width / 3 / 2 + cents, deviationText.y + deviationText.height),
-                                    Qt.point(root.width / 3 / 2 + cents, closestNotesView.height) ]
+                            path: [ Qt.point(root.width / 3 / 2 + cents * tuneMarkShapePath.centsScale, deviationText.y + deviationText.height),
+                                    Qt.point(root.width / 3 / 2 + cents * tuneMarkShapePath.centsScale, closestNotesView.height) ]
                     }
                 }
             }
