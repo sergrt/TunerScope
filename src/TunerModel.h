@@ -24,7 +24,7 @@ public:
     void updateFromSettings(const Settings& settings);
 
 public slots:
-    void updateDetectedNotes(const QVector<float> &spectrum);
+    void updateDetectedNotes(const QVector<float> &audioData, const QVector<float> &spectrum);
 
 private:
     struct TuneResult {

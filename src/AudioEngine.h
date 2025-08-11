@@ -20,6 +20,7 @@ public:
 
 signals:
     void spectrumUpdated(const QVector<float> &spectrum);
+    void spectrumUpdatedWithData(const QVector<float> audioData, const QVector<float> &spectrum);
 
 private slots:
     void processAudio();

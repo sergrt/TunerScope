@@ -26,7 +26,7 @@ int main(int argc, char *argv[]) {
 
     QObject::connect(&audioEngine, &AudioEngine::spectrumUpdated,
                      &spectrumModel, &SpectrumModel::updateSpectrum);
-    QObject::connect(&audioEngine, &AudioEngine::spectrumUpdated,
+    QObject::connect(&audioEngine, &AudioEngine::spectrumUpdatedWithData,
                      &tunerModel, &TunerModel::updateDetectedNotes);
 
     QObject::connect(&settings, &Settings::settingsChanged,

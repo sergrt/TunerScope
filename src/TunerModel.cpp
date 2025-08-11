@@ -1,5 +1,7 @@
 #include "TunerModel.h"
 
+#include "FastYin.h"
+
 #include <iterator>
 
 namespace {
@@ -416,86 +418,6 @@ float detectPitchYin1(const QVector<float>& signal, float sampleRate) {
 }
 
 
-void difference(QVector<float> spectrum, QVector<float> &yinBuffer) {
-    // POWER TERM CALCULATION
-    // ... for the power terms in equation (7) in the Yin paper
-    QVector<float> powerTerms(yinBuffer.size(), 0.0f);
-    for (int j = 0; j < yinBuffer.size(); ++j) {
-        powerTerms[0] += spectrum[j] * spectrum[j];
-    }
-    // now iteratively calculate all others (saves a few multiplications)
-    for (int tau = 1; tau < yinBuffer.size(); ++tau) {
-        powerTerms[tau] = powerTerms[tau - 1] - spectrum[tau - 1] * spectrum[tau - 1] +
-                          spectrum[tau + yinBuffer.size()] * spectrum[tau + yinBuffer.size()];
-    }
-
-    // YIN-STYLE AUTOCORRELATION via FFT
-    // 1. data
-    for (int j = 0; j < audioBuffer.length; ++j) {
-        audioBufferFFT[2 * j] = audioBuffer[j];
-        audioBufferFFT[2 * j + 1] = 0;
-    }
-    fft.complexForward(audioBufferFFT);
-
-    // 2. half of the data, disguised as a convolution kernel
-    for (int j = 0; j < yinBuffer.length; ++j) {
-        kernel[2 * j] = audioBuffer[(yinBuffer.length - 1) - j];
-        kernel[2 * j + 1] = 0;
-        kernel[2 * j + audioBuffer.length] = 0;
-        kernel[2 * j + audioBuffer.length + 1] = 0;
-    }
-    fft.complexForward(kernel);
-
-    // 3. convolution via complex multiplication
-    for (int j = 0; j < audioBuffer.length; ++j) {
-        yinStyleACF[2 * j] =
-            audioBufferFFT[2 * j] * kernel[2 * j] - audioBufferFFT[2 * j + 1] * kernel[2 * j + 1];  // real
-        yinStyleACF[2 * j + 1] =
-            audioBufferFFT[2 * j + 1] * kernel[2 * j] + audioBufferFFT[2 * j] * kernel[2 * j + 1];  // imaginary
-    }
-    fft.complexInverse(yinStyleACF, true);
-
-    // CALCULATION OF difference function
-    // ... according to (7) in the Yin paper.
-    for (int j = 0; j < yinBuffer.length; ++j) {
-        // taking only the real part
-        yinBuffer[j] = powerTerms[0] + powerTerms[j] - 2 * yinStyleACF[2 * (yinBuffer.length - 1 + j)];
-    }
-}
-float getPitch(QVector<float> spectrum, int sampleRate) {
-    int tauEstimate;
-    float pitchInHertz;
-
-    // step 2
-    difference(spectrum);
-
-    // step 3
-    cumulativeMeanNormalizedDifference();
-
-    // step 4
-    tauEstimate = absoluteThreshold();
-
-    // step 5
-    if (tauEstimate != -1) {
-        float betterTau = parabolicInterpolation(tauEstimate);
-
-        // step 6
-        // TODO Implement optimization for the AUBIO_YIN algorithm.
-        // 0.77% => 0.5% error rate,
-        // using the data of the YIN paper
-        // bestLocalEstimate()
-
-        // conversion to Hz
-        pitchInHertz = sampleRate / betterTau;
-    } else{
-            // no pitch found
-        pitchInHertz = -1;
-    }
-
-    return pitchInHertz;
-
-}
-
 
 } // namespace
 
@@ -546,7 +468,7 @@ QHash<int, QByteArray> TunerModel::roleNames() const {
     };
 }
 
-void TunerModel::updateDetectedNotes(const QVector<float> &spectrum) {
+void TunerModel::updateDetectedNotes(const QVector<float> &audioData, const QVector<float> &spectrum) {
     /*
     const auto max_magnitude_iterator = std::max_element(spectrum.begin(), spectrum.end());
     const auto peakIndex = std::distance(spectrum.begin(), max_magnitude_iterator);
@@ -600,7 +522,10 @@ void TunerModel::updateDetectedNotes(const QVector<float> &spectrum) {
     //qDebug() << "Estimated fundamental:" << result.frequency << "Hz, score:" << result.score;
 
     //auto frequency = result.frequency;
-    float frequency = detectPitchYin(spectrum, m_sampleRate);
+    //float frequency = detectPitchYin(spectrum, m_sampleRate);
+    FastYin fastYin(audioData, spectrum, m_sampleRate);
+    float frequency = fastYin.getPitch();
+    qDebug() << "Detect frequency: " << frequency;
 
     const auto closestNote = findClosestNote(frequency);
     const float noteFreq = closestNote.first;

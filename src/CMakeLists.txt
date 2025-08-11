@@ -16,6 +16,7 @@ qt_standard_project_setup(REQUIRES 6.8)
 
 set(HEADERS
     AudioEngine.h
+    FastYin.h
     Settings.h
     SpectrumModel.h
     TunerModel.h
@@ -24,6 +25,7 @@ set(HEADERS
 set(SOURCES
     main.cpp
     AudioEngine.cpp
+    FastYin.cpp
     Settings.cpp
     SpectrumModel.cpp
     TunerModel.cpp
