@@ -32,7 +32,7 @@ private:
     QVector<float> m_yinStyleACF;
     QVector<float> m_audioBufferFFT;
     QVector<float> m_kernel;
-    double m_threshold{0.2};
+    double m_threshold{0.1};
     PitchDetectionResult m_result{};
 
 

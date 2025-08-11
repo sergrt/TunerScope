@@ -28,7 +28,7 @@ float FastYin::getPitch() {
     Yin_init(&yin, m_audioBuffer.size(), 0.05);
     auto pitch = Yin_getPitch(&yin, m_audioBuffer.data());
     free(yin.yinBuffer);
-    return pitch;
+    //return pitch;
     }
 
     if (m_audioBuffer.size() == 0)
@@ -71,7 +71,7 @@ void fft(std::vector<double[2]> &data, int fftSize) {
     fftw_complex *in, *out;
     fftw_plan p;
     const int N = fftSize;
-    p = fftw_plan_dft_1d(N, static_cast<fftw_complex*>(data.data()), data.data(), FFTW_FORWARD, FFTW_ESTIMATE);
+    p = fftw_plan_dft_1d(N, reinterpret_cast<fftw_complex*>(data.data()), data.data(), FFTW_FORWARD, FFTW_ESTIMATE);
 
     fftw_execute(p); /* repeat as needed */
 
@@ -82,7 +82,7 @@ void inverseFft(std::vector<double[2]> &data, int fftSize) {
     fftw_complex *in, *out;
     fftw_plan p;
     const int N = fftSize;
-    p = fftw_plan_dft_1d(N, static_cast<fftw_complex*>(data.data()), data.data(), FFTW_BACKWARD, FFTW_ESTIMATE);
+    p = fftw_plan_dft_1d(N, reinterpret_cast<fftw_complex*>(data.data()), data.data(), FFTW_BACKWARD, FFTW_ESTIMATE);
 
     fftw_execute(p); /* repeat as needed */
 
@@ -102,6 +102,15 @@ std::vector<double[2]> convertQVector(const QVector<float>& data) {
     return result;
 }
 
+std::vector<double[2]> convertQVector2(const QVector<float>& data) {
+    std::vector<double[2]> result(data.size());
+    for (int i = 0; i < result.size(); ++i) {
+        result[i][0] = data[i];
+        result[i][1] = 0.0f;
+    }
+    return result;
+}
+
  QVector<float> convertVector(std::vector<double[2]>& data) {
     QVector<float> result(data.size() * 2);
     for (int i = 0; i < data.size(); ++i) {
@@ -117,57 +126,66 @@ std::vector<double[2]> convertQVector(const QVector<float>& data) {
  }
 
 void FastYin::difference() {
-    /*
+
     // POWER TERM CALCULATION
     // ... for the power terms in equation (7) in the Yin paper
-    QVector<float> powerTerms(m_yinBuffer.size(), 0.0f);
+    int M = m_yinBuffer.size();
+    int signalLen = m_audioBuffer.size();
+    QVector<float> powerTerms(M, 0.0f);
     for (int j = 0; j < m_yinBuffer.size(); ++j) {
         powerTerms[0] += m_audioBuffer[j] * m_audioBuffer[j];
     }
     // now iteratively calculate all others (saves a few multiplications)
     for (int tau = 1; tau < m_yinBuffer.size(); ++tau) {
-        powerTerms[tau] = powerTerms[tau-1] - m_audioBuffer[tau-1] * m_audioBuffer[tau-1] + m_audioBuffer[tau + m_yinBuffer.size()] * m_audioBuffer[tau + m_yinBuffer.size()];
+        powerTerms[tau] = powerTerms[tau-1] - m_audioBuffer[tau-1] * m_audioBuffer[tau-1] + m_audioBuffer[tau + M] * m_audioBuffer[tau + M];
     }
 
     // YIN-STYLE AUTOCORRELATION via FFT
     // 1. data
-    for (int j = 0; j < m_audioBuffer.size(); ++j) {
+    for (int j = 0; j < signalLen; ++j) {
         m_audioBufferFFT[2*j] = m_audioBuffer[j];
         m_audioBufferFFT[2*j+1] = 0;
     }
-    auto audioBufferFFTBuffer = convertQVector(m_audioBufferFFT);
+    auto audioBufferFFTBuffer = convertQVector2(m_audioBufferFFT);
     fft(audioBufferFFTBuffer, audioBufferFFTBuffer.size());
     m_audioBufferFFT = convertVector(audioBufferFFTBuffer);
 
     // 2. half of the data, disguised as a convolution kernel
-    for (int j = 0; j < m_yinBuffer.size(); ++j) {
+    for (int j = 0; j < M; ++j) {
         m_kernel[2*j] = m_audioBuffer[(m_yinBuffer.size()-1)-j];
         m_kernel[2*j+1] = 0;
-        m_kernel[2*j+m_audioBuffer.size()] = 0;
-        m_kernel[2*j+m_audioBuffer.size()+1] = 0;
+        m_kernel[2*j+signalLen] = 0;
+        m_kernel[2*j+signalLen+1] = 0;
     }
-    auto kernelBuffer = convertQVector(m_kernel);
+    auto kernelBuffer = convertQVector2(m_kernel);
     fft(kernelBuffer, kernelBuffer.size());
     m_kernel = convertVector(kernelBuffer);
 
     // 3. convolution via complex multiplication
-    for (int j = 0; j < m_audioBuffer.size(); ++j) {
+    for (int j = 0; j < signalLen; ++j) {
         m_yinStyleACF[2*j]   = m_audioBufferFFT[2*j]*m_kernel[2*j] - m_audioBufferFFT[2*j+1]*m_kernel[2*j+1]; // real
         m_yinStyleACF[2*j+1] = m_audioBufferFFT[2*j+1]*m_kernel[2*j] + m_audioBufferFFT[2*j]*m_kernel[2*j+1]; // imaginary
     }
-    auto yinStyleACFBuffer = convertQVector(m_yinStyleACF);
+    auto yinStyleACFBuffer = convertQVector2(m_yinStyleACF);
     inverseFft(yinStyleACFBuffer, yinStyleACFBuffer.size());
     m_yinStyleACF = convertVector(yinStyleACFBuffer);
+
+    //+ Normalize
+    for (int i = 0; i < m_yinStyleACF.size(); ++i) {
+        m_yinStyleACF[i] = m_yinStyleACF[i] / double(yinStyleACFBuffer.size()/2);
+    }
 
     // CALCULATION OF difference function
     // ... according to (7) in the Yin paper.
     for (int j = 0; j < m_yinBuffer.size(); ++j) {
         // taking only the real part
-        m_yinBuffer[j] = powerTerms[0] + powerTerms[j] - 2 * m_yinStyleACF[2 * (m_yinBuffer.size() - 1 + j)];
+        int idx = 2 * (m_yinBuffer.size() - 1 + j);
+        double acf_val = m_yinStyleACF[idx];
+        m_yinBuffer[j] = powerTerms[0] + powerTerms[j] - 2 * acf_val;
     }
-    */
+    return;
 
-    /*
+/*
 
         int M = (int)m_yinBuffer.size();      // number of lags we want (e.g. half window)
         int signalLen = (int)m_audioBuffer.size(); // original frame length, must be >= M * 2 typically
@@ -175,7 +193,8 @@ void FastYin::difference() {
                 // power terms: powerTerms[tau] = sum_{j=0..M-1} x[j+tau]^2  (we'll compute as sliding)
         std::vector<double> powerTerms(M, 0.0);
         double p0 = 0.0;
-        for (int j = 0; j < M; ++j) p0 += m_audioBuffer[j] * m_audioBuffer[j];
+        for (int j = 0; j < M; ++j)
+            p0 += m_audioBuffer[j] * m_audioBuffer[j];
         powerTerms[0] = p0;
         for (int tau = 1; tau < M; ++tau) {
             // ensure indices safe: audio[tau + M - 1] must exist
@@ -188,8 +207,10 @@ void FastYin::difference() {
         std::vector<std::complex<double>> A(N), B(N);
 
                 // A = audio (real), zero-padded
-        for (int i = 0; i < signalLen; ++i) A[i] = std::complex<double>(m_audioBuffer[i], 0.0);
-        for (int i = signalLen; i < N; ++i) A[i] = 0.0;
+        for (int i = 0; i < signalLen; ++i)
+            A[i] = std::complex<double>(m_audioBuffer[i], 0.0);
+        for (int i = signalLen; i < N; ++i)
+            A[i] = 0.0;
 
                 // B = reversed prefix of audio of length M (kernel for cross-correlation)
                 // kernel[k] = audio[M-1 - k] for k=0..M-1, then zero pad
@@ -234,7 +255,9 @@ void FastYin::difference() {
         fftw_destroy_plan(pa);
         fftw_destroy_plan(pb);
         fftw_destroy_plan(pc);
-*/
+        */
+
+    /*
     const int M = (int)m_yinBuffer.size();        // number of lags (window)
     const int frameLen = M * 2; // ensure we have at least 2*M samples in m_audioBuffer
     if ((int)m_audioBuffer.size() < frameLen) {
@@ -297,6 +320,7 @@ void FastYin::difference() {
         double acf_val = corr[tau]; // check: for this pipeline corr[tau] equals required cross term
         m_yinBuffer[tau] = float(powerTerms[0] + powerTerms[tau] - 2.0 * acf_val);
     }
+*/
 }
 
 void FastYin::cumulativeMeanNormalizedDifference() {
