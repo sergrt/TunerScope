@@ -249,6 +249,254 @@ PitchEstimate estimateFundamentalHarmonicSum(
 
     return result;
 }
+
+float detectPitchYin(const QVector<float>& signal, float sampleRate) {
+    const int frameSize = signal.size();
+    const int tauMin = 10; // Minimum period (in samples)
+    const int tauMax = frameSize / 2; // Maximum period (in samples)
+
+    QVector<float> yinBuffer(tauMax - tauMin + 1);
+    QVector<float> cumulativeMeanNormalizedDifference(tauMax - tauMin + 1);
+
+    // Calculate the cumulative mean normalized difference
+    for (int tau = tauMin; tau <= tauMax; tau++) {
+        float sum = 0.0f;
+        for (int i = 0; i < frameSize - tau; i++) {
+            float diff = signal[i] - signal[i + tau];
+            sum += diff * diff;
+        }
+        yinBuffer[tau - tauMin] = sum / (frameSize - tau);
+    }
+
+    // Calculate the cumulative mean normalized difference
+    cumulativeMeanNormalizedDifference[0] = 1.0f;
+    for (int tau = tauMin + 1; tau <= tauMax; tau++) {
+        cumulativeMeanNormalizedDifference[tau - tauMin] = yinBuffer[tau - tauMin] / (yinBuffer[tau - tauMin - 1] + yinBuffer[tau - tauMin]);
+    }
+
+    /*
+    qDebug() << "Tau range: [" << tauMin << ", " << tauMax << "]";
+    qDebug() << "CMN function:";
+    for (int i = 0; i < cumulativeMeanNormalizedDifference.size(); i++) {
+        qDebug() << "  " << i << ": " << cumulativeMeanNormalizedDifference[i] << "\n";
+    }
+    */
+
+    // Find the minimum value in the cumulative mean normalized difference
+    int minIndex = 0;
+    float minValue = 1.0f;
+    for (int i = 0; i < cumulativeMeanNormalizedDifference.size(); i++) {
+        if (cumulativeMeanNormalizedDifference[i] < minValue) {
+            minValue = cumulativeMeanNormalizedDifference[i];
+            minIndex = i;
+        }
+    }
+
+    // Calculate the detected pitch frequency
+    float pitchFrequency = sampleRate / (tauMin + minIndex);
+
+    return pitchFrequency;
+}
+
+QVector<float> calculateCmnFunction(const QVector<float>& signal) {
+    const int tauMin = 10; // Adjust this value as needed
+    const int tauMax = signal.size() *0.9; // Adjust this value as needed
+
+    QVector<float> cmnFunction(tauMax - tauMin + 1);
+
+    for (int tau = tauMin; tau <= tauMax; tau++) {
+        float sum = 0.0f;
+        for (int i = 0; i < signal.size() - tau; i++) {
+            float diff = std::abs(signal[i] - signal[i + tau]);
+            sum += diff;
+        }
+        cmnFunction[tau - tauMin] = sum / (signal.size() - tau);
+    }
+
+            // Calculate the cumulative mean normalized difference
+    for (int i = 1; i < cmnFunction.size(); i++) {
+        cmnFunction[i] = (cmnFunction[i] + cmnFunction[i-1]) / 2.0f;
+    }
+
+    return cmnFunction;
+}
+int findMinIndex(const QVector<float>& cmnFunction, float threshold) {
+    int minIndex = -1;
+    float minValue = std::numeric_limits<float>::max();
+
+    for (int i = 0; i < cmnFunction.size(); i++) {
+        if (cmnFunction[i] < minValue && cmnFunction[i] < threshold) {
+            minValue = cmnFunction[i];
+            minIndex = i;
+        }
+    }
+
+    return minIndex;
+}
+float calculatePitchPeriod(const QVector<float>& signal, float sampleRate) {
+    QVector<float> autocorrelation(signal.size());
+    /*
+    for (int i = 0; i < signal.size(); i++) {
+        autocorrelation[i] = 0;
+        for (int j = 0; j < signal.size() - i; j++) {
+            autocorrelation[i] += signal[j] * signal[j + i];
+        }
+    }
+    */
+    autocorrelation = signal;
+
+    int minIndex = 0;
+    float minValue = std::numeric_limits<float>::max();
+    for (int i = 1; i < autocorrelation.size(); i++) {
+        if (autocorrelation[i] < minValue) {
+            minValue = autocorrelation[i];
+            minIndex = i;
+        }
+    }
+
+    return (minIndex + 1) / sampleRate;
+}
+
+float calculatePitchFrequency(float pitchPeriod) {
+    return 1.0f / pitchPeriod;
+}
+QVector<float> applyLowPassFilter(const QVector<float>& signal, float sampleRate) {
+    const float cutoffFrequency = 8000.0f; // Adjust this value as needed
+    const float rc = 1.0f / (2.0f * 3.14159f * cutoffFrequency);
+    const float dt = 1.0f / sampleRate;
+
+    QVector<float> filteredSignal(signal.size());
+    filteredSignal[0] = signal[0];
+
+    for (int i = 1; i < signal.size(); i++) {
+        filteredSignal[i] = (signal[i] + filteredSignal[i-1] * (1.0f - dt / rc)) / (1.0f + dt / rc);
+    }
+
+    return filteredSignal;
+}
+QVector<float> applySmoothingFilter(const QVector<float>& cmnFunction) {
+    const int windowSize = 5; // Adjust this value as needed
+
+    QVector<float> smoothedCmnFunction(cmnFunction.size());
+
+    for (int i = 0; i < cmnFunction.size(); i++) {
+        float sum = 0.0f;
+        for (int j = std::max(0, i - windowSize / 2); j <= qMin(cmnFunction.size() - 1, i + windowSize / 2); j++) {
+            sum += cmnFunction[j];
+        }
+        smoothedCmnFunction[i] = sum / windowSize;
+    }
+
+    return smoothedCmnFunction;
+}
+float detectPitchYin1(const QVector<float>& signal, float sampleRate) {
+    // ...
+
+    // Adjust the threshold values for the normalized signal
+    float threshold = 0.001f; // Adjust this value as needed
+
+    QVector<float> filteredSignal = applyLowPassFilter(signal, sampleRate);
+    QVector<float> smoothedCmnFunction = applySmoothingFilter(filteredSignal);
+    // Calculate the CMN function
+    QVector<float> cmnFunction = calculateCmnFunction(signal);
+    
+
+    // Find the minimum value of the CMN function
+    int minIndex = findMinIndex(cmnFunction, threshold);
+
+    // Calculate the pitch period
+    float pitchPeriod = calculatePitchPeriod(cmnFunction, sampleRate);
+
+    // Calculate the pitch frequency
+    float pitchFrequency = calculatePitchFrequency(pitchPeriod);
+
+    // Print the pitch frequency
+    qDebug() << "Pitch frequency: " << pitchFrequency;
+    return pitchFrequency;
+}
+
+
+void difference(QVector<float> spectrum, QVector<float> &yinBuffer) {
+    // POWER TERM CALCULATION
+    // ... for the power terms in equation (7) in the Yin paper
+    QVector<float> powerTerms(yinBuffer.size(), 0.0f);
+    for (int j = 0; j < yinBuffer.size(); ++j) {
+        powerTerms[0] += spectrum[j] * spectrum[j];
+    }
+    // now iteratively calculate all others (saves a few multiplications)
+    for (int tau = 1; tau < yinBuffer.size(); ++tau) {
+        powerTerms[tau] = powerTerms[tau - 1] - spectrum[tau - 1] * spectrum[tau - 1] +
+                          spectrum[tau + yinBuffer.size()] * spectrum[tau + yinBuffer.size()];
+    }
+
+    // YIN-STYLE AUTOCORRELATION via FFT
+    // 1. data
+    for (int j = 0; j < audioBuffer.length; ++j) {
+        audioBufferFFT[2 * j] = audioBuffer[j];
+        audioBufferFFT[2 * j + 1] = 0;
+    }
+    fft.complexForward(audioBufferFFT);
+
+    // 2. half of the data, disguised as a convolution kernel
+    for (int j = 0; j < yinBuffer.length; ++j) {
+        kernel[2 * j] = audioBuffer[(yinBuffer.length - 1) - j];
+        kernel[2 * j + 1] = 0;
+        kernel[2 * j + audioBuffer.length] = 0;
+        kernel[2 * j + audioBuffer.length + 1] = 0;
+    }
+    fft.complexForward(kernel);
+
+    // 3. convolution via complex multiplication
+    for (int j = 0; j < audioBuffer.length; ++j) {
+        yinStyleACF[2 * j] =
+            audioBufferFFT[2 * j] * kernel[2 * j] - audioBufferFFT[2 * j + 1] * kernel[2 * j + 1];  // real
+        yinStyleACF[2 * j + 1] =
+            audioBufferFFT[2 * j + 1] * kernel[2 * j] + audioBufferFFT[2 * j] * kernel[2 * j + 1];  // imaginary
+    }
+    fft.complexInverse(yinStyleACF, true);
+
+    // CALCULATION OF difference function
+    // ... according to (7) in the Yin paper.
+    for (int j = 0; j < yinBuffer.length; ++j) {
+        // taking only the real part
+        yinBuffer[j] = powerTerms[0] + powerTerms[j] - 2 * yinStyleACF[2 * (yinBuffer.length - 1 + j)];
+    }
+}
+float getPitch(QVector<float> spectrum, int sampleRate) {
+    int tauEstimate;
+    float pitchInHertz;
+
+    // step 2
+    difference(spectrum);
+
+    // step 3
+    cumulativeMeanNormalizedDifference();
+
+    // step 4
+    tauEstimate = absoluteThreshold();
+
+    // step 5
+    if (tauEstimate != -1) {
+        float betterTau = parabolicInterpolation(tauEstimate);
+
+        // step 6
+        // TODO Implement optimization for the AUBIO_YIN algorithm.
+        // 0.77% => 0.5% error rate,
+        // using the data of the YIN paper
+        // bestLocalEstimate()
+
+        // conversion to Hz
+        pitchInHertz = sampleRate / betterTau;
+    } else{
+            // no pitch found
+        pitchInHertz = -1;
+    }
+
+    return pitchInHertz;
+
+}
+
+
 } // namespace
 
 TunerModel::TunerModel(QObject *parent)
@@ -351,7 +599,8 @@ void TunerModel::updateDetectedNotes(const QVector<float> &spectrum) {
     auto result = estimateFundamentalHarmonicSum(spectrum, m_sampleRate, m_fftSize);
     //qDebug() << "Estimated fundamental:" << result.frequency << "Hz, score:" << result.score;
 
-    auto frequency = result.frequency;
+    //auto frequency = result.frequency;
+    float frequency = detectPitchYin(spectrum, m_sampleRate);
 
     const auto closestNote = findClosestNote(frequency);
     const float noteFreq = closestNote.first;
