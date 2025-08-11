@@ -264,7 +264,7 @@ void AudioEngine::computeSpectrum(const QVector<float> &buffer) {
         // Normalize
 
         for (int i = 0; i < magnitudes.size(); ++i) {
-            magnitudes[i] = magnitudes[i] / max_magnitude;
+            //magnitudes[i] = magnitudes[i] / max_magnitude;
         }
 
         // Noise gate

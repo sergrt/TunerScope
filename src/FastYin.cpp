@@ -5,6 +5,11 @@
 #include <cmath>
 #include <complex>
 
+
+
+
+
+
 FastYin::FastYin(QVector<float> audioBuffer, QVector<float> fftData, int sampleRate) {
     m_audioBuffer.swap(audioBuffer);
     m_fftData.swap(fftData);
@@ -18,6 +23,14 @@ FastYin::FastYin(QVector<float> audioBuffer, QVector<float> fftData, int sampleR
 }
 
 float FastYin::getPitch() {
+    {
+    Yin yin{};
+    Yin_init(&yin, m_audioBuffer.size(), 0.05);
+    auto pitch = Yin_getPitch(&yin, m_audioBuffer.data());
+    free(yin.yinBuffer);
+    return pitch;
+    }
+
     if (m_audioBuffer.size() == 0)
         return 0.0f;
 
