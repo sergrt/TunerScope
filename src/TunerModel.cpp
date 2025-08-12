@@ -1,6 +1,7 @@
 #include "TunerModel.h"
 
 #include "FastYin.h"
+#include "Yin.h"
 
 #include <iterator>
 
@@ -523,8 +524,20 @@ void TunerModel::updateDetectedNotes(const QVector<float> &audioData, const QVec
 
     //auto frequency = result.frequency;
     //float frequency = detectPitchYin(spectrum, m_sampleRate);
-    FastYin fastYin(audioData, spectrum, m_sampleRate);
-    float frequency = fastYin.getPitch();
+
+    // Compare yin results
+    YinPitchCalculator yin(audioData, m_sampleRate);
+    float freqYin = yin.getPitch();
+    FastYin fastYin(audioData, m_sampleRate, false);
+    float freqFastYin = fastYin.getPitch();
+    FastYin fastYin2(audioData, m_sampleRate, true);
+    float freqFastYin2 = fastYin2.getPitch();
+
+    qDebug() << "Detected frequency: " << "yin = " << freqYin << ", fastYin = " << freqFastYin << ", fastYin2 = " << freqFastYin2;
+
+    float frequency = freqYin;
+    //FastYin fastYin(audioData, m_sampleRate);
+    //float frequency = fastYin.getPitch();
     qDebug() << "Detect frequency: " << frequency;
 
     const auto closestNote = findClosestNote(frequency);

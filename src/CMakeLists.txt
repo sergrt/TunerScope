@@ -20,6 +20,7 @@ set(HEADERS
     Settings.h
     SpectrumModel.h
     TunerModel.h
+    Yin.h
 )
 
 set(SOURCES
@@ -29,6 +30,7 @@ set(SOURCES
     Settings.cpp
     SpectrumModel.cpp
     TunerModel.cpp
+    Yin.cpp
 )
 
 set(QML_SOURCES

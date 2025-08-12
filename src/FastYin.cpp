@@ -6,13 +6,9 @@
 #include <complex>
 
 
-
-
-
-
-FastYin::FastYin(QVector<float> audioBuffer, QVector<float> fftData, int sampleRate) {
+FastYin::FastYin(QVector<float> audioBuffer, int sampleRate, bool usePowerOf2Size /*= false*/) {
+    m_usePowerOf2Size = usePowerOf2Size;
     m_audioBuffer.swap(audioBuffer);
-    m_fftData.swap(fftData);
     m_sampleRate = sampleRate;
 
     size_t bufferSize = m_audioBuffer.size();
@@ -23,13 +19,7 @@ FastYin::FastYin(QVector<float> audioBuffer, QVector<float> fftData, int sampleR
 }
 
 float FastYin::getPitch() {
-    {
-    Yin yin{};
-    Yin_init(&yin, m_audioBuffer.size(), 0.05);
-    auto pitch = Yin_getPitch(&yin, m_audioBuffer.data());
-    free(yin.yinBuffer);
-    //return pitch;
-    }
+
 
     if (m_audioBuffer.size() == 0)
         return 0.0f;
@@ -38,7 +28,10 @@ float FastYin::getPitch() {
     float pitchInHertz = -1.0f;
 
     // step 2
-    difference();
+    if (m_usePowerOf2Size)
+        differencePowerOf2();
+    else
+        difference();
 
     // step 3
     cumulativeMeanNormalizedDifference();
@@ -63,6 +56,7 @@ float FastYin::getPitch() {
         pitchInHertz = -1.0f;
     }
     m_result.pitch = pitchInHertz;
+
     // TODO: Examine if whole result is needed, and return it here
     return pitchInHertz;
 }
@@ -185,77 +179,80 @@ void FastYin::difference() {
     }
     return;
 
-/*
+}
 
-        int M = (int)m_yinBuffer.size();      // number of lags we want (e.g. half window)
-        int signalLen = (int)m_audioBuffer.size(); // original frame length, must be >= M * 2 typically
+void FastYin::differencePowerOf2() {
+    int M = (int)m_yinBuffer.size();            // number of lags we want (e.g. half window)
+    int signalLen = (int)m_audioBuffer.size();  // original frame length, must be >= M * 2 typically
 
-                // power terms: powerTerms[tau] = sum_{j=0..M-1} x[j+tau]^2  (we'll compute as sliding)
-        std::vector<double> powerTerms(M, 0.0);
-        double p0 = 0.0;
-        for (int j = 0; j < M; ++j)
-            p0 += m_audioBuffer[j] * m_audioBuffer[j];
-        powerTerms[0] = p0;
-        for (int tau = 1; tau < M; ++tau) {
-            // ensure indices safe: audio[tau + M - 1] must exist
-            powerTerms[tau] = powerTerms[tau-1] - m_audioBuffer[tau-1]*m_audioBuffer[tau-1] + m_audioBuffer[tau + M - 1]*m_audioBuffer[tau + M - 1];
-        }
+    // power terms: powerTerms[tau] = sum_{j=0..M-1} x[j+tau]^2  (we'll compute as sliding)
+    std::vector<double> powerTerms(M, 0.0);
+    double p0 = 0.0;
+    for (int j = 0; j < M; ++j)
+        p0 += m_audioBuffer[j] * m_audioBuffer[j];
+    powerTerms[0] = p0;
+    for (int tau = 1; tau < M; ++tau) {
+        // ensure indices safe: audio[tau + M - 1] must exist
+        powerTerms[tau] = powerTerms[tau - 1] - m_audioBuffer[tau - 1] * m_audioBuffer[tau - 1] +
+                          m_audioBuffer[tau + M - 1] * m_audioBuffer[tau + M - 1];
+    }
 
-                // Prepare FFT length
-        int N = nextPow2(signalLen + M); // safe: >= signalLen + kernelLen -1; kernelLen = M
-        // Use complex buffers of length N
-        std::vector<std::complex<double>> A(N), B(N);
+    // Prepare FFT length
+    int N = nextPow2(signalLen + M);  // safe: >= signalLen + kernelLen -1; kernelLen = M
+    // Use complex buffers of length N
+    std::vector<std::complex<double>> A(N), B(N);
 
-                // A = audio (real), zero-padded
-        for (int i = 0; i < signalLen; ++i)
-            A[i] = std::complex<double>(m_audioBuffer[i], 0.0);
-        for (int i = signalLen; i < N; ++i)
-            A[i] = 0.0;
+    // A = audio (real), zero-padded
+    for (int i = 0; i < signalLen; ++i)
+        A[i] = std::complex<double>(m_audioBuffer[i], 0.0);
+    for (int i = signalLen; i < N; ++i)
+        A[i] = 0.0;
 
-                // B = reversed prefix of audio of length M (kernel for cross-correlation)
-                // kernel[k] = audio[M-1 - k] for k=0..M-1, then zero pad
-        for (int k = 0; k < M; ++k) B[k] = std::complex<double>(m_audioBuffer[M - 1 - k], 0.0);
-        for (int k = M; k < N; ++k) B[k] = 0.0;
+    // B = reversed prefix of audio of length M (kernel for cross-correlation)
+    // kernel[k] = audio[M-1 - k] for k=0..M-1, then zero pad
+    for (int k = 0; k < M; ++k)
+        B[k] = std::complex<double>(m_audioBuffer[M - 1 - k], 0.0);
+    for (int k = M; k < N; ++k)
+        B[k] = 0.0;
 
-                // FFTW plans (in-place possible with separate arrays)
-        fftw_complex *fa = reinterpret_cast<fftw_complex*>(A.data());
-        fftw_complex *fb = reinterpret_cast<fftw_complex*>(B.data());
-        fftw_plan pa = fftw_plan_dft_1d(N, fa, fa, FFTW_FORWARD, FFTW_ESTIMATE);
-        fftw_plan pb = fftw_plan_dft_1d(N, fb, fb, FFTW_FORWARD, FFTW_ESTIMATE);
+    // FFTW plans (in-place possible with separate arrays)
+    fftw_complex *fa = reinterpret_cast<fftw_complex *>(A.data());
+    fftw_complex *fb = reinterpret_cast<fftw_complex *>(B.data());
+    fftw_plan pa = fftw_plan_dft_1d(N, fa, fa, FFTW_FORWARD, FFTW_ESTIMATE);
+    fftw_plan pb = fftw_plan_dft_1d(N, fb, fb, FFTW_FORWARD, FFTW_ESTIMATE);
 
-        fftw_execute(pa);
-        fftw_execute(pb);
+    fftw_execute(pa);
+    fftw_execute(pb);
 
-                // Multiply elementwise: C = A * B
-        std::vector<std::complex<double>> C(N);
-        for (int k = 0; k < N; ++k) {
-            C[k] = A[k] * B[k];
-        }
+    // Multiply elementwise: C = A * B
+    std::vector<std::complex<double>> C(N);
+    for (int k = 0; k < N; ++k) {
+        C[k] = A[k] * B[k];
+    }
 
-                // IFFT C
-        fftw_complex* fc = reinterpret_cast<fftw_complex*>(C.data());
-        fftw_plan pc = fftw_plan_dft_1d(N, fc, fc, FFTW_BACKWARD, FFTW_ESTIMATE);
-        fftw_execute(pc);
+    // IFFT C
+    fftw_complex *fc = reinterpret_cast<fftw_complex *>(C.data());
+    fftw_plan pc = fftw_plan_dft_1d(N, fc, fc, FFTW_BACKWARD, FFTW_ESTIMATE);
+    fftw_execute(pc);
 
-                // normalize by N and extract real part => cross-correlation
-                // after this, the lag tau correlation value is at index (M - 1 + tau)
-        std::vector<double> corr(N);
-        for (int k = 0; k < N; ++k) {
-            corr[k] = C[k].real() / double(N); // IMPORTANT: divide by N
-        }
+    // normalize by N and extract real part => cross-correlation
+    // after this, the lag tau correlation value is at index (M - 1 + tau)
+    std::vector<double> corr(N);
+    for (int k = 0; k < N; ++k) {
+        corr[k] = C[k].real() / double(N);  // IMPORTANT: divide by N
+    }
 
-                // compute yin difference:
-        for (int tau = 0; tau < M; ++tau) {
-            int idx = (M - 1 + tau);
-            double acf_val = corr[idx]; // autocorrelation at lag tau
-            m_yinBuffer[tau] = powerTerms[0] + powerTerms[tau] - 2.0 * acf_val;
-        }
+    // compute yin difference:
+    for (int tau = 0; tau < M; ++tau) {
+        int idx = (M - 1 + tau);
+        double acf_val = corr[idx];  // autocorrelation at lag tau
+        m_yinBuffer[tau] = powerTerms[0] + powerTerms[tau] - 2.0 * acf_val;
+    }
 
-                // cleanup plans
-        fftw_destroy_plan(pa);
-        fftw_destroy_plan(pb);
-        fftw_destroy_plan(pc);
-        */
+    // cleanup plans
+    fftw_destroy_plan(pa);
+    fftw_destroy_plan(pb);
+    fftw_destroy_plan(pc);
 
     /*
     const int M = (int)m_yinBuffer.size();        // number of lags (window)
@@ -265,62 +262,62 @@ void FastYin::difference() {
         return;
     }
 
-            // 1) prepare audio frame (double)
-    std::vector<double> frame(frameLen);
-    for (int i = 0; i < frameLen; ++i) frame[i] = double(m_audioBuffer[i]);
+             // 1) prepare audio frame (double)
+     std::vector<double> frame(frameLen);
+     for (int i = 0; i < frameLen; ++i) frame[i] = double(m_audioBuffer[i]);
 
-            // optional: remove DC
-    double mean = 0.0;
-    for (double v : frame) mean += v;
-    mean /= frame.size();
-    for (double &v : frame) v -= mean;
+              // optional: remove DC
+      double mean = 0.0;
+      for (double v : frame) mean += v;
+      mean /= frame.size();
+      for (double &v : frame) v -= mean;
 
-            // 2) powerTerms: powerTerms[tau] = sum_{j=0..M-1} frame[j+tau]^2
-    std::vector<double> powerTerms(M, 0.0);
-    double p0 = 0.0;
-    for (int j = 0; j < M; ++j) p0 += frame[j] * frame[j];
-    powerTerms[0] = p0;
-    for (int tau = 1; tau < M; ++tau) {
-        powerTerms[tau] = powerTerms[tau-1] - frame[tau-1]*frame[tau-1] + frame[tau + M - 1]*frame[tau + M - 1];
-    }
+             // 2) powerTerms: powerTerms[tau] = sum_{j=0..M-1} frame[j+tau]^2
+     std::vector<double> powerTerms(M, 0.0);
+     double p0 = 0.0;
+     for (int j = 0; j < M; ++j) p0 += frame[j] * frame[j];
+     powerTerms[0] = p0;
+     for (int tau = 1; tau < M; ++tau) {
+         powerTerms[tau] = powerTerms[tau-1] - frame[tau-1]*frame[tau-1] + frame[tau + M - 1]*frame[tau + M - 1];
+     }
 
-            // 3) autocorrelation via FFT (power spectrum)
-    int N = 1;
-    while (N < frameLen + M) N <<= 1; // safe length
-    std::vector<std::complex<double>> A(N);
-    for (int i = 0; i < frameLen; ++i) A[i] = std::complex<double>(frame[i], 0.0);
-    for (int i = frameLen; i < N; ++i) A[i] = 0.0;
+              // 3) autocorrelation via FFT (power spectrum)
+      int N = 1;
+      while (N < frameLen + M) N <<= 1; // safe length
+      std::vector<std::complex<double>> A(N);
+      for (int i = 0; i < frameLen; ++i) A[i] = std::complex<double>(frame[i], 0.0);
+      for (int i = frameLen; i < N; ++i) A[i] = 0.0;
 
-    fftw_plan pA = fftw_plan_dft_1d(N, reinterpret_cast<fftw_complex*>(A.data()),
-                                    reinterpret_cast<fftw_complex*>(A.data()),
-                                    FFTW_FORWARD, FFTW_ESTIMATE);
-    fftw_execute(pA);
+     fftw_plan pA = fftw_plan_dft_1d(N, reinterpret_cast<fftw_complex*>(A.data()),
+                                     reinterpret_cast<fftw_complex*>(A.data()),
+                                     FFTW_FORWARD, FFTW_ESTIMATE);
+     fftw_execute(pA);
 
-            // P = A * conj(A)
-    std::vector<std::complex<double>> P(N);
-    for (int k = 0; k < N; ++k) P[k] = A[k] * std::conj(A[k]);
+              // P = A * conj(A)
+      std::vector<std::complex<double>> P(N);
+      for (int k = 0; k < N; ++k) P[k] = A[k] * std::conj(A[k]);
 
-            // ifft
-    fftw_plan pC = fftw_plan_dft_1d(N, reinterpret_cast<fftw_complex*>(P.data()),
-                                    reinterpret_cast<fftw_complex*>(P.data()),
-                                    FFTW_BACKWARD, FFTW_ESTIMATE);
-    fftw_execute(pC);
+             // ifft
+     fftw_plan pC = fftw_plan_dft_1d(N, reinterpret_cast<fftw_complex*>(P.data()),
+                                     reinterpret_cast<fftw_complex*>(P.data()),
+                                     FFTW_BACKWARD, FFTW_ESTIMATE);
+     fftw_execute(pC);
 
-            // normalize
-    std::vector<double> corr(N);
-    for (int k = 0; k < N; ++k) corr[k] = P[k].real() / double(N);
+              // normalize
+      std::vector<double> corr(N);
+      for (int k = 0; k < N; ++k) corr[k] = P[k].real() / double(N);
 
-    fftw_destroy_plan(pA);
-    fftw_destroy_plan(pC);
+     fftw_destroy_plan(pA);
+     fftw_destroy_plan(pC);
 
-            // 4) compute difference d(tau) = powerTerms[0] + powerTerms[tau] - 2*acf[tau]
-            // For our layout acf[tau] corresponds directly to corr[tau] when we compute power spectrum autocorr.
-            // But be careful — our corr is full-length; we want sum_{j=0..M-1} x[j]*x[j+tau] which sits at corr[tau]
-    for (int tau = 0; tau < M; ++tau) {
-        double acf_val = corr[tau]; // check: for this pipeline corr[tau] equals required cross term
-        m_yinBuffer[tau] = float(powerTerms[0] + powerTerms[tau] - 2.0 * acf_val);
-    }
-*/
+              // 4) compute difference d(tau) = powerTerms[0] + powerTerms[tau] - 2*acf[tau]
+              // For our layout acf[tau] corresponds directly to corr[tau] when we compute power spectrum autocorr.
+              // But be careful — our corr is full-length; we want sum_{j=0..M-1} x[j]*x[j+tau] which sits at corr[tau]
+      for (int tau = 0; tau < M; ++tau) {
+          double acf_val = corr[tau]; // check: for this pipeline corr[tau] equals required cross term
+          m_yinBuffer[tau] = float(powerTerms[0] + powerTerms[tau] - 2.0 * acf_val);
+      }
+  */
 }
 
 void FastYin::cumulativeMeanNormalizedDifference() {
