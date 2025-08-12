@@ -2,7 +2,8 @@
 
 #include <QVector>
 
-#include <chrono>
+// This is C-style implementation of yin pitch detection algorithm
+// https://github.com/ashokfernandez/Yin-Pitch-Tracking
 
 class YinPitchCalculator {
 public:
@@ -10,21 +11,7 @@ public:
 
     float getPitch();
 
-    int lastProcessingTimeMs() const {
-        return m_lastProcessingTimeMs;
-    }
 private:
-    void startPerformanceMeasure() {
-        m_startTime = std::chrono::high_resolution_clock::now();
-    }
-    void stopPerformanceMeasure() {
-        auto end = std::chrono::high_resolution_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - m_startTime);
-        m_lastProcessingTimeMs = duration.count();
-    }
-    std::chrono::high_resolution_clock::time_point m_startTime{};
-    int m_lastProcessingTimeMs{0};
-
     QVector<float> m_audioBuffer;
     int m_sampleRate{44100};
 
@@ -44,6 +31,10 @@ private:
      */
     void Yin_init(Yin *yin, int16_t bufferSize, float threshold);
 
+    /**
+     * Free buffer from yin object
+     * @param yin Yin pitch detection object to release buffer of
+     */
     void Yin_free(Yin *yin);
 
     /**

@@ -294,7 +294,7 @@ void AudioEngine::computeSpectrum(const QVector<float> &buffer) {
 
         //emit spectrumPeaks(max_magnitude_freq);
         emit spectrumUpdated(magnitudes);
-        emit spectrumUpdatedWithData(buffer, magnitudes);
+        emit audioBufferUpdated(buffer);
         return;
 
         // Convert scale to dB

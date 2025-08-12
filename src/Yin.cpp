@@ -1,5 +1,11 @@
 #include "Yin.h"
 
+namespace {
+
+static const float kThreshold = 0.05f; // 95% probability
+
+} // namespace
+
 
 YinPitchCalculator::YinPitchCalculator(QVector<float> audioBuffer, int sampleRate) {
     m_audioBuffer.swap(audioBuffer);
@@ -8,10 +14,17 @@ YinPitchCalculator::YinPitchCalculator(QVector<float> audioBuffer, int sampleRat
 
 float YinPitchCalculator::getPitch() {
     Yin yin{};
-    Yin_init(&yin, m_audioBuffer.size(), 0.05);
-    auto pitch = Yin_getPitch(&yin, m_audioBuffer.data());
-    Yin_free(&yin);
-    return pitch;
+    try {
+        Yin_init(&yin, m_audioBuffer.size(), kThreshold);
+        auto pitch = Yin_getPitch(&yin, m_audioBuffer.data());
+        Yin_free(&yin);
+        return pitch;
+    } catch(std::exception& e) {
+        qWarning("Exception while getting yin pitch result");
+        Yin_free(&yin);
+    }
+
+    return 0.0f;
 }
 
 /**
@@ -50,7 +63,6 @@ void YinPitchCalculator::Yin_free(Yin *yin){
  * @return        Fundamental frequency of the signal in Hz. Returns -1 if pitch can't be found
  */
 float YinPitchCalculator::Yin_getPitch(Yin *yin, float* buffer){
-    startPerformanceMeasure();
     int16_t tauEstimate = -1;
     float pitchInHertz = -1;
 
@@ -67,7 +79,7 @@ float YinPitchCalculator::Yin_getPitch(Yin *yin, float* buffer){
     if(tauEstimate != -1){
         pitchInHertz = m_sampleRate / Yin_parabolicInterpolation(yin, tauEstimate);
     }
-    stopPerformanceMeasure();
+
     return pitchInHertz;
 }
 
@@ -208,7 +220,6 @@ float YinPitchCalculator::Yin_parabolicInterpolation(Yin *yin, int16_t tauEstima
         // (2.0f * s1 - s2 - s0) was incorrectly multiplied with -1
         betterTau = tauEstimate + (s2 - s0) / (2 * (2 * s1 - s2 - s0));
     }
-
 
     return betterTau;
 }

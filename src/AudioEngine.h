@@ -19,8 +19,8 @@ public:
     void updateFromSettings(const Settings& settings);
 
 signals:
-    void spectrumUpdated(const QVector<float> &spectrum);
-    void spectrumUpdatedWithData(const QVector<float> audioData, const QVector<float> &spectrum);
+    void spectrumUpdated(const QVector<float>& spectrum);
+    void audioBufferUpdated(const QVector<float>& audioData);
 
 private slots:
     void processAudio();

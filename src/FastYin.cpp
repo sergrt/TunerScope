@@ -5,9 +5,61 @@
 #include <cmath>
 #include <complex>
 
+namespace {
 
-FastYin::FastYin(QVector<float> audioBuffer, int sampleRate, bool usePowerOf2Size /*= false*/) {
-    m_usePowerOf2Size = usePowerOf2Size;
+void fft(std::vector<double[2]> &data, int fftSize) {
+    fftw_complex *in, *out;
+    fftw_plan p;
+    const int N = fftSize;
+    p = fftw_plan_dft_1d(N, reinterpret_cast<fftw_complex*>(data.data()), data.data(), FFTW_FORWARD, FFTW_ESTIMATE);
+
+    fftw_execute(p);
+
+    fftw_destroy_plan(p);
+}
+
+void inverseFft(std::vector<double[2]> &data, int fftSize) {
+    fftw_complex *in, *out;
+    fftw_plan p;
+    const int N = fftSize;
+    p = fftw_plan_dft_1d(N, reinterpret_cast<fftw_complex*>(data.data()), data.data(), FFTW_BACKWARD, FFTW_ESTIMATE);
+
+    fftw_execute(p);
+
+    fftw_destroy_plan(p);
+    for (int i = 0; i < data.size(); ++i) {
+        //data[i][0] /= N;
+        data[i][1] /= N;
+    }
+}
+
+std::vector<double[2]> convertQVector(const QVector<float>& data) {
+    std::vector<double[2]> result(data.size());
+    for (int i = 0; i < result.size(); ++i) {
+        result[i][0] = data[i];
+        result[i][1] = 0.0f;
+    }
+    return result;
+}
+
+QVector<float> convertVector(std::vector<double[2]>& data) {
+    QVector<float> result(data.size() * 2);
+    for (int i = 0; i < data.size(); ++i) {
+        result[2*i] = data[i][0];
+        result[2*i + 1] = data[i][1];
+    }
+    return result;
+}
+
+double nextPow2(double n) {
+    if (n <= 0)
+        return 1;
+    return std::pow(2, std::ceil(std::log2(n)));
+}
+
+} // namespace
+
+FastYin::FastYin(QVector<float> audioBuffer, int sampleRate) {
     m_audioBuffer.swap(audioBuffer);
     m_sampleRate = sampleRate;
 
@@ -19,20 +71,15 @@ FastYin::FastYin(QVector<float> audioBuffer, int sampleRate, bool usePowerOf2Siz
 }
 
 float FastYin::getPitch() {
-
-    startPerformanceMeasure();
-
     if (m_audioBuffer.size() == 0)
         return 0.0f;
 
     int tauEstimate = -1;
-    float pitchInHertz = -1.0f;
+    float pitchHz = -1.0f;
 
     // step 2
-    if (m_usePowerOf2Size)
-        differencePowerOf2();
-    else
-        difference();
+    // difference(); // See comments in header - less accurate
+    differencePowerOf2();
 
     // step 3
     cumulativeMeanNormalizedDifference();
@@ -51,75 +98,16 @@ float FastYin::getPitch() {
         // bestLocalEstimate()
 
         // conversion to Hz
-        pitchInHertz = m_sampleRate / betterTau;
+        pitchHz = m_sampleRate / betterTau;
     } else{
         // no pitch found
-        pitchInHertz = -1.0f;
+        pitchHz = -1.0f;
     }
-    m_result.pitch = pitchInHertz;
+    m_result.pitchHz = pitchHz;
 
     // TODO: Examine if whole result is needed, and return it here
-    stopPerformanceMeasure();
-    return pitchInHertz;
+    return pitchHz;
 }
-
-void fft(std::vector<double[2]> &data, int fftSize) {
-    fftw_complex *in, *out;
-    fftw_plan p;
-    const int N = fftSize;
-    p = fftw_plan_dft_1d(N, reinterpret_cast<fftw_complex*>(data.data()), data.data(), FFTW_FORWARD, FFTW_ESTIMATE);
-
-    fftw_execute(p); /* repeat as needed */
-
-    fftw_destroy_plan(p);
-}
-
-void inverseFft(std::vector<double[2]> &data, int fftSize) {
-    fftw_complex *in, *out;
-    fftw_plan p;
-    const int N = fftSize;
-    p = fftw_plan_dft_1d(N, reinterpret_cast<fftw_complex*>(data.data()), data.data(), FFTW_BACKWARD, FFTW_ESTIMATE);
-
-    fftw_execute(p); /* repeat as needed */
-
-    fftw_destroy_plan(p);
-    for (int i = 0; i < data.size(); ++i) {
-        //data[i][0] /= N;
-        data[i][1] /= N;
-    }
-}
-
-std::vector<double[2]> convertQVector(const QVector<float>& data) {
-    std::vector<double[2]> result(data.size() / 2);
-    for (int i = 0; i < result.size(); ++i) {
-        result[i][0] = data[2*i];
-        result[i][1] = data[2*i + 1];
-    }
-    return result;
-}
-
-std::vector<double[2]> convertQVector2(const QVector<float>& data) {
-    std::vector<double[2]> result(data.size());
-    for (int i = 0; i < result.size(); ++i) {
-        result[i][0] = data[i];
-        result[i][1] = 0.0f;
-    }
-    return result;
-}
-
- QVector<float> convertVector(std::vector<double[2]>& data) {
-    QVector<float> result(data.size() * 2);
-    for (int i = 0; i < data.size(); ++i) {
-        result[2*i] = data[i][0];
-        result[2*i + 1] = data[i][1];
-    }
-    return result;
-}
-
- double nextPow2(double n) {
-     if (n <= 0) return 1; // Handle non-positive cases
-     return std::pow(2, std::ceil(std::log2(n)));
- }
 
 void FastYin::difference() {
 
@@ -142,7 +130,7 @@ void FastYin::difference() {
         m_audioBufferFFT[2*j] = m_audioBuffer[j];
         m_audioBufferFFT[2*j+1] = 0;
     }
-    auto audioBufferFFTBuffer = convertQVector2(m_audioBufferFFT);
+    auto audioBufferFFTBuffer = convertQVector(m_audioBufferFFT);
     fft(audioBufferFFTBuffer, audioBufferFFTBuffer.size());
     m_audioBufferFFT = convertVector(audioBufferFFTBuffer);
 
@@ -153,7 +141,7 @@ void FastYin::difference() {
         m_kernel[2*j+signalLen] = 0;
         m_kernel[2*j+signalLen+1] = 0;
     }
-    auto kernelBuffer = convertQVector2(m_kernel);
+    auto kernelBuffer = convertQVector(m_kernel);
     fft(kernelBuffer, kernelBuffer.size());
     m_kernel = convertVector(kernelBuffer);
 
@@ -162,7 +150,7 @@ void FastYin::difference() {
         m_yinStyleACF[2*j]   = m_audioBufferFFT[2*j]*m_kernel[2*j] - m_audioBufferFFT[2*j+1]*m_kernel[2*j+1]; // real
         m_yinStyleACF[2*j+1] = m_audioBufferFFT[2*j+1]*m_kernel[2*j] + m_audioBufferFFT[2*j]*m_kernel[2*j+1]; // imaginary
     }
-    auto yinStyleACFBuffer = convertQVector2(m_yinStyleACF);
+    auto yinStyleACFBuffer = convertQVector(m_yinStyleACF);
     inverseFft(yinStyleACFBuffer, yinStyleACFBuffer.size());
     m_yinStyleACF = convertVector(yinStyleACFBuffer);
 
@@ -218,6 +206,7 @@ void FastYin::differencePowerOf2() {
         B[k] = 0.0;
 
     // FFTW plans (in-place possible with separate arrays)
+    // It is not really c++ way and might have issues, but for most compilers this should work
     fftw_complex *fa = reinterpret_cast<fftw_complex *>(A.data());
     fftw_complex *fb = reinterpret_cast<fftw_complex *>(B.data());
     fftw_plan pa = fftw_plan_dft_1d(N, fa, fa, FFTW_FORWARD, FFTW_ESTIMATE);
@@ -255,71 +244,6 @@ void FastYin::differencePowerOf2() {
     fftw_destroy_plan(pa);
     fftw_destroy_plan(pb);
     fftw_destroy_plan(pc);
-
-    /*
-    const int M = (int)m_yinBuffer.size();        // number of lags (window)
-    const int frameLen = M * 2; // ensure we have at least 2*M samples in m_audioBuffer
-    if ((int)m_audioBuffer.size() < frameLen) {
-        // error: not enough samples — handle or pad zeros
-        return;
-    }
-
-             // 1) prepare audio frame (double)
-     std::vector<double> frame(frameLen);
-     for (int i = 0; i < frameLen; ++i) frame[i] = double(m_audioBuffer[i]);
-
-              // optional: remove DC
-      double mean = 0.0;
-      for (double v : frame) mean += v;
-      mean /= frame.size();
-      for (double &v : frame) v -= mean;
-
-             // 2) powerTerms: powerTerms[tau] = sum_{j=0..M-1} frame[j+tau]^2
-     std::vector<double> powerTerms(M, 0.0);
-     double p0 = 0.0;
-     for (int j = 0; j < M; ++j) p0 += frame[j] * frame[j];
-     powerTerms[0] = p0;
-     for (int tau = 1; tau < M; ++tau) {
-         powerTerms[tau] = powerTerms[tau-1] - frame[tau-1]*frame[tau-1] + frame[tau + M - 1]*frame[tau + M - 1];
-     }
-
-              // 3) autocorrelation via FFT (power spectrum)
-      int N = 1;
-      while (N < frameLen + M) N <<= 1; // safe length
-      std::vector<std::complex<double>> A(N);
-      for (int i = 0; i < frameLen; ++i) A[i] = std::complex<double>(frame[i], 0.0);
-      for (int i = frameLen; i < N; ++i) A[i] = 0.0;
-
-     fftw_plan pA = fftw_plan_dft_1d(N, reinterpret_cast<fftw_complex*>(A.data()),
-                                     reinterpret_cast<fftw_complex*>(A.data()),
-                                     FFTW_FORWARD, FFTW_ESTIMATE);
-     fftw_execute(pA);
-
-              // P = A * conj(A)
-      std::vector<std::complex<double>> P(N);
-      for (int k = 0; k < N; ++k) P[k] = A[k] * std::conj(A[k]);
-
-             // ifft
-     fftw_plan pC = fftw_plan_dft_1d(N, reinterpret_cast<fftw_complex*>(P.data()),
-                                     reinterpret_cast<fftw_complex*>(P.data()),
-                                     FFTW_BACKWARD, FFTW_ESTIMATE);
-     fftw_execute(pC);
-
-              // normalize
-      std::vector<double> corr(N);
-      for (int k = 0; k < N; ++k) corr[k] = P[k].real() / double(N);
-
-     fftw_destroy_plan(pA);
-     fftw_destroy_plan(pC);
-
-              // 4) compute difference d(tau) = powerTerms[0] + powerTerms[tau] - 2*acf[tau]
-              // For our layout acf[tau] corresponds directly to corr[tau] when we compute power spectrum autocorr.
-              // But be careful — our corr is full-length; we want sum_{j=0..M-1} x[j]*x[j+tau] which sits at corr[tau]
-      for (int tau = 0; tau < M; ++tau) {
-          double acf_val = corr[tau]; // check: for this pipeline corr[tau] equals required cross term
-          m_yinBuffer[tau] = float(powerTerms[0] + powerTerms[tau] - 2.0 * acf_val);
-      }
-  */
 }
 
 void FastYin::cumulativeMeanNormalizedDifference() {
@@ -368,7 +292,6 @@ int FastYin::absoluteThreshold() {
 
     return tau;
 }
-
 
 float FastYin::parabolicInterpolation(int tauEstimate) {
     float betterTau;
