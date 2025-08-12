@@ -20,6 +20,7 @@ FastYin::FastYin(QVector<float> audioBuffer, int sampleRate, bool usePowerOf2Siz
 
 float FastYin::getPitch() {
 
+    startPerformanceMeasure();
 
     if (m_audioBuffer.size() == 0)
         return 0.0f;
@@ -58,6 +59,7 @@ float FastYin::getPitch() {
     m_result.pitch = pitchInHertz;
 
     // TODO: Examine if whole result is needed, and return it here
+    stopPerformanceMeasure();
     return pitchInHertz;
 }
 
@@ -146,7 +148,7 @@ void FastYin::difference() {
 
     // 2. half of the data, disguised as a convolution kernel
     for (int j = 0; j < M; ++j) {
-        m_kernel[2*j] = m_audioBuffer[(m_yinBuffer.size()-1)-j];
+        m_kernel[2*j] = m_audioBuffer[(M-1)-j];
         m_kernel[2*j+1] = 0;
         m_kernel[2*j+signalLen] = 0;
         m_kernel[2*j+signalLen+1] = 0;
@@ -171,9 +173,9 @@ void FastYin::difference() {
 
     // CALCULATION OF difference function
     // ... according to (7) in the Yin paper.
-    for (int j = 0; j < m_yinBuffer.size(); ++j) {
+    for (int j = 0; j < M; ++j) {
         // taking only the real part
-        int idx = 2 * (m_yinBuffer.size() - 1 + j);
+        int idx = 2 * (M - 1 + j);
         double acf_val = m_yinStyleACF[idx];
         m_yinBuffer[j] = powerTerms[0] + powerTerms[j] - 2 * acf_val;
     }

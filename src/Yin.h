@@ -2,13 +2,29 @@
 
 #include <QVector>
 
+#include <chrono>
+
 class YinPitchCalculator {
 public:
     YinPitchCalculator(QVector<float> audioBuffer, int sampleRate);
 
     float getPitch();
 
+    int lastProcessingTimeMs() const {
+        return m_lastProcessingTimeMs;
+    }
 private:
+    void startPerformanceMeasure() {
+        m_startTime = std::chrono::high_resolution_clock::now();
+    }
+    void stopPerformanceMeasure() {
+        auto end = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - m_startTime);
+        m_lastProcessingTimeMs = duration.count();
+    }
+    std::chrono::high_resolution_clock::time_point m_startTime{};
+    int m_lastProcessingTimeMs{0};
+
     QVector<float> m_audioBuffer;
     int m_sampleRate{44100};
 

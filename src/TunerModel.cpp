@@ -528,12 +528,17 @@ void TunerModel::updateDetectedNotes(const QVector<float> &audioData, const QVec
     // Compare yin results
     YinPitchCalculator yin(audioData, m_sampleRate);
     float freqYin = yin.getPitch();
+    int msYin = yin.lastProcessingTimeMs();
     FastYin fastYin(audioData, m_sampleRate, false);
     float freqFastYin = fastYin.getPitch();
+    int msFastYin = fastYin.lastProcessingTimeMs();
     FastYin fastYin2(audioData, m_sampleRate, true);
     float freqFastYin2 = fastYin2.getPitch();
+    int msFastYin2 = fastYin2.lastProcessingTimeMs();
 
-    qDebug() << "Detected frequency: " << "yin = " << freqYin << ", fastYin = " << freqFastYin << ", fastYin2 = " << freqFastYin2;
+    qDebug() << "Detected frequency: " << "yin = " << freqYin << " (" << msYin << "ms), "
+        "fastYin = " << freqFastYin << " (" << msFastYin << "ms), "
+        "fastYin2 = " << freqFastYin2 <<  " (" << msFastYin2 << "ms)";
 
     float frequency = freqYin;
     //FastYin fastYin(audioData, m_sampleRate);

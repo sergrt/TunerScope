@@ -50,6 +50,7 @@ void YinPitchCalculator::Yin_free(Yin *yin){
  * @return        Fundamental frequency of the signal in Hz. Returns -1 if pitch can't be found
  */
 float YinPitchCalculator::Yin_getPitch(Yin *yin, float* buffer){
+    startPerformanceMeasure();
     int16_t tauEstimate = -1;
     float pitchInHertz = -1;
 
@@ -66,7 +67,7 @@ float YinPitchCalculator::Yin_getPitch(Yin *yin, float* buffer){
     if(tauEstimate != -1){
         pitchInHertz = m_sampleRate / Yin_parabolicInterpolation(yin, tauEstimate);
     }
-
+    stopPerformanceMeasure();
     return pitchInHertz;
 }
 
