@@ -39,7 +39,6 @@ QHash<int, QByteArray> SpectrumModel::roleNames() const {
 }
 
 void SpectrumModel::updateSpectrum(const QVector<float> &spectrum) {
-
     /*
     static int dbg = 0;
     ++dbg;
@@ -54,14 +53,13 @@ void SpectrumModel::updateSpectrum(const QVector<float> &spectrum) {
     }
 
     m_spectrum.resize(spectrum.size());
+
     // Normalize
     auto max_magnitude_iterator = std::max_element(spectrum.begin(), spectrum.end());
     auto max_magnitude = *max_magnitude_iterator;
     for (int i = 0; i < spectrum.size(); ++i) {
         m_spectrum[i] = spectrum[i] / max_magnitude;
     }
-
-    //m_spectrum = spectrum;
 
     if (resetModel) {
         m_scaleValues.reserve(m_spectrum.size());

@@ -57,11 +57,10 @@ private:
     void initHannWindow();
     void initPrevMagnitudes();
     QAudioFormat composeAudioFormat() const;
-    void computeSpectrum(const QVector<float> &buffer);
+    void computeSpectrum(QVector<float> buffer);
 
     std::unique_ptr<QAudioSource> m_audioInput;
     QIODevice* m_inputDevice{nullptr};
-    QVector<float> m_buffer;
     QTimer m_timer;
 
     QVector<float> m_hannWindow;
