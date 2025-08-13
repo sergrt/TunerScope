@@ -52,7 +52,7 @@ int main(int argc, char *argv[]) {
 
     QFont fixedFont = QFontDatabase::systemFont(QFontDatabase::SmallestReadableFont);
     engine.rootContext()->setContextProperty("fixedFont", fixedFont);
-    const auto fixedFontHeight = 2 * QFontMetrics(fixedFont).height();
+    const auto fixedFontHeight = QFontMetrics(fixedFont).height();
     engine.rootContext()->setContextProperty("fixedFontHeight", fixedFontHeight);
 
     audioEngine.start();
@@ -63,6 +63,8 @@ int main(int argc, char *argv[]) {
         qCritical("Unable to start engine");
         return -1;
     }
+
+
 
     return app.exec();
 }

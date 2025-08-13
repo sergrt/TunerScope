@@ -28,6 +28,13 @@ Settings::Settings(QObject *parent)
     if (!load())
         save();
 }
+Settings::~Settings() {
+    try {
+        save();
+    } catch(...) {
+        qWarning("Unable to save settings on exit");
+    }
+}
 
 void Settings::enumerateDevices() {
     m_devices = QMediaDevices::audioInputs();
@@ -119,6 +126,22 @@ int Settings::getRefreshRateMs() const {
     return m_refreshRateMs;
 }
 
+int Settings::getWndWidth() const {
+    return m_wndWidth;
+}
+
+void Settings::setWndWidth(int w) {
+    m_wndWidth = w;
+}
+
+int Settings::getWndHeight() const {
+    return m_wndHeight;
+}
+
+void Settings::setWndHeight(int h) {
+    m_wndHeight = h;
+}
+
 void Settings::handleFftSizeChange(int value) {
     m_fftSize = value;
 
@@ -157,6 +180,8 @@ bool Settings::load() {
     m_sampleFormat = static_cast<QAudioFormat::SampleFormat>(doc["sample_format"].toInt());
     m_fftSize = doc["fft_size"].toInt();
     m_refreshRateMs = doc["refresh_rate_ms"].toInt();
+    m_wndWidth = doc["wnd_width"].toInt(kDefaultWndWidth);
+    m_wndHeight = doc["wnd_height"].toInt(kDefaultWndHeight);
 
     return true;
 }
@@ -176,6 +201,8 @@ void Settings::save() {
     saveObject["sample_format"] = m_sampleFormat;
     saveObject["fft_size"] = m_fftSize;
     saveObject["refresh_rate_ms"] = m_refreshRateMs;
+    saveObject["wnd_width"] = m_wndWidth;
+    saveObject["wnd_height"] = m_wndHeight;
 
     QByteArray saveData = QJsonDocument(saveObject).toJson();
     file.write(saveData);

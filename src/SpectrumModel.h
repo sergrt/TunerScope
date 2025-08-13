@@ -15,14 +15,14 @@ class SpectrumModel : public QAbstractListModel {
 public:
     SpectrumModel(QObject *parent = nullptr);
 
-    int rowCount(const QModelIndex &parent = QModelIndex()) const override;
-    QVariant data(const QModelIndex &index, int role) const override;
+    int rowCount(const QModelIndex& parent = QModelIndex()) const override;
+    QVariant data(const QModelIndex& index, int role) const override;
     QHash<int, QByteArray> roleNames() const override;
 
     void updateFromSettings(const Settings& settings);
 
 public slots:
-    void updateSpectrum(const QVector<float> &spectrum);
+    void updateSpectrum(const QVector<float>& spectrum);
 
 private:
     void forceReset();

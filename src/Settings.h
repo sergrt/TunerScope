@@ -23,8 +23,11 @@ public:
     Q_PROPERTY(int sampleRate READ getSampleRate WRITE setSampleRate NOTIFY sampleRateChanged)
     Q_PROPERTY(QAudioFormat::SampleFormat sampleFormat READ getSampleFormat WRITE setSampleFormat NOTIFY sampleFormatChanged)
     Q_PROPERTY(int fftSize READ getFftSize WRITE setFftSize NOTIFY fftSizeChanged)
+    Q_PROPERTY(int wndWidth READ getWndWidth WRITE setWndWidth)
+    Q_PROPERTY(int wndHeight READ getWndHeight WRITE setWndHeight)
 
     explicit Settings(QObject *parent = nullptr);
+    ~Settings();
 
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     QVariant data(const QModelIndex &index, int role) const override;
@@ -47,6 +50,12 @@ public:
 
     int getRefreshRateMs() const;
 
+    int getWndWidth() const;
+    void setWndWidth(int w);
+
+    int getWndHeight() const;
+    void setWndHeight(int h);
+
 signals:
     void deviceChanged(const QByteArray& id);
     void deviceNameChanged(const QString& deviceName);
@@ -66,6 +75,9 @@ private:
     void enumerateDevices();
     bool load();
 
+    const int kDefaultWndWidth = 600;
+    const int kDefaultWndHeight = 400;
+
     QList<QAudioDevice> m_devices;
     QByteArray m_deviceId{};
     QString m_deviceName;
@@ -74,4 +86,6 @@ private:
     QAudioFormat::SampleFormat m_sampleFormat{QAudioFormat::Float};
     int m_fftSize{4096};
     int m_refreshRateMs{50};
+    int m_wndWidth{kDefaultWndWidth};
+    int m_wndHeight{kDefaultWndHeight};
 };

@@ -1,6 +1,6 @@
 #include "SpectrumModel.h"
 
-SpectrumModel::SpectrumModel(QObject *parent)
+SpectrumModel::SpectrumModel(QObject* parent)
     : QAbstractListModel(parent) {
 }
 
@@ -14,11 +14,11 @@ void SpectrumModel::forceReset() {
     m_prevSpectrumSize = 0;
 }
 
-int SpectrumModel::rowCount(const QModelIndex &) const {
+int SpectrumModel::rowCount(const QModelIndex&) const {
     return m_spectrum.size();
 }
 
-QVariant SpectrumModel::data(const QModelIndex &index, int role) const {
+QVariant SpectrumModel::data(const QModelIndex& index, int role) const {
     if (!index.isValid())
         return {};
 
@@ -38,7 +38,7 @@ QHash<int, QByteArray> SpectrumModel::roleNames() const {
     };
 }
 
-void SpectrumModel::updateSpectrum(const QVector<float> &spectrum) {
+void SpectrumModel::updateSpectrum(const QVector<float>& spectrum) {
     /*
     static int dbg = 0;
     ++dbg;
@@ -54,7 +54,7 @@ void SpectrumModel::updateSpectrum(const QVector<float> &spectrum) {
 
     m_spectrum.resize(spectrum.size());
 
-    // Normalize
+    // Normalize [0.0 ... 1.0]
     auto max_magnitude_iterator = std::max_element(spectrum.begin(), spectrum.end());
     auto max_magnitude = *max_magnitude_iterator;
     for (int i = 0; i < spectrum.size(); ++i) {

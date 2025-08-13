@@ -131,14 +131,13 @@ void TunerModel::updateDetectedNotes(const QVector<float>& audioData) {
     //qDebug() << "Detected frequency: " << "yin = " << freqYin << ", fastYin = " << freqFastYin;
 
     float frequency = freqFastYin;
-    qDebug() << "Detect frequency: " << frequency;
-
     const auto closestNote = findClosestNote(frequency);
     const float noteFreq = closestNote.first;
     float cents = 1200 * log2(frequency / noteFreq);
     if (!std::isfinite(cents))
         cents = 0.0f;
-    qDebug() << "Cents = " << cents;
+    //qDebug() << "Detected frequency = " << frequency << ", closest note = " << closestNote.second << " (" << closestNote.first << ")" << ", deviation cents = " << cents;
+
     if (m_prevNotes[1].noteName.isEmpty()) {
         m_prevNotes[1] = {closestNote.second, noteFreq, frequency, cents};
     } else {

@@ -23,7 +23,7 @@ Item {
 
         readonly property int markGapPx: 2 // vertical distance from scale mark to number
         readonly property int markHeightPx: 2
-        readonly property int scaleHeight: fixedFontHeight + markGapPx + markHeightPx
+        readonly property int scaleHeight: fixedFontHeight * 2 + markGapPx + markHeightPx
         // readonly property int markDensity: 20 // Deprecated, used as index % markDensity === 0
 
         anchors.fill: parent
@@ -32,7 +32,7 @@ Item {
         model: spectrumModel
 
         ScrollBar.horizontal:  ScrollBar {
-            id: verticalScrollBar
+            id: horizontalScrollBar
             policy: ScrollBar.AlwaysOn
         }
 
@@ -120,6 +120,7 @@ Item {
                 font: fixedFont
                 text: scaleItem
                 color: "white"
+                renderType: Text.NativeRendering
             }
         } // delegate
 

@@ -5,8 +5,8 @@ import QtQuick.Layouts
 Item {
     id: settings
     anchors.centerIn: parent
-    width: 300
-    height: 300
+    width: parent.width / 4
+    height: parent.height / 2
 
     /*
     SettingsModel {
@@ -14,17 +14,26 @@ Item {
          // Properties and slots from your C++ class
     }
     */
-
     Rectangle {
+        id: settingsWindow
         anchors.fill: parent
         color: "grey"
+        border.color: "darkgrey"
+        border.width: 2
+        radius: 2
+
+    ScrollView {
+        id: scrollView
+        anchors.fill: parent
+        anchors.margins: 5
 
         ColumnLayout {
-            anchors.fill: parent
-
+            width: scrollView.availableWidth
 
             Text {
                 text: qsTr("Audio device")
+                Layout.fillWidth: true
+
             }
             ComboBox {
                 Layout.fillWidth: true
@@ -140,5 +149,7 @@ Item {
                 }
             }
         }
+    }
+
     }
 }

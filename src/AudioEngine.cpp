@@ -28,15 +28,11 @@ void TraceDevices() {
     }
 }
 
-void fft(std::vector<double[2]> &data, int fftSize) {
-    fftw_complex *in, *out;
+void fft(std::vector<fftw_complex> &data, int fftSize) {
     fftw_plan p;
     const int N = fftSize; //data.size();
-
-    p = fftw_plan_dft_1d(N, static_cast<fftw_complex*>(data.data()), data.data(), FFTW_FORWARD, FFTW_ESTIMATE);
-
+    p = fftw_plan_dft_1d(N, data.data(), data.data(), FFTW_FORWARD, FFTW_ESTIMATE);
     fftw_execute(p);
-
     fftw_destroy_plan(p);
 }
 
@@ -85,8 +81,10 @@ void AudioEngine::start() {
 
     auto devices =  QMediaDevices::audioInputs();
     for (const auto& dev : std::as_const(devices)) {
-        if (dev.id() == m_deviceId)
+        if (dev.id() == m_deviceId) {
             device = dev;
+            break;
+        }
     }
     m_audioInput.reset(new QAudioSource(device, format, this));
     m_inputDevice = m_audioInput->start();
@@ -147,7 +145,7 @@ void AudioEngine::processAudio()
 }
 
 void AudioEngine::computeSpectrum(QVector<float> buffer) {
-    std::vector<double[2]> data(m_fftSize);
+    std::vector<fftw_complex> data(m_fftSize);
     for (int i = 0; i < m_fftSize; ++i) {
         data[i][0] = 0.0;
         data[i][1] = 0.0;
@@ -168,35 +166,13 @@ void AudioEngine::computeSpectrum(QVector<float> buffer) {
         magnitudes.push_back(sqrt(data[i][0] * data[i][0] + data[i][1] * data[i][1]));
     }
 
+    // Some stuff useful for playing around with audio data and spectrum
     /*
+    // Debug max magnitude frequency
     auto max_magnitude_iterator = std::max_element(magnitudes.begin(), magnitudes.end());
     auto max_magnitude = *max_magnitude_iterator;
     auto max_magnitude_freq = std::distance(magnitudes.begin(), max_magnitude_iterator) * static_cast<float>(m_sampleRate) / m_fftSize;
-
-    int max_magnitude = 0;
-
-    for (int i = 0; i < magnitudes.size(); ++i) {
-        if (magnitudes[i] > max_magnitude) {
-            max_magnitude = magnitudes[i];
-        }
-    }
-    */
-
-    /*
-    // Debug max magnitude frequency
-
-    float max_magnitude = 0.0;
-    float max_magnitude_freq = 0.0f;
-    int max_idx = 0;
-    for (int i = 0; i < magnitudes.size(); ++i) {
-        auto freq = i * static_cast<float>(m_sampleRate) / m_fftSize;
-        if (magnitudes[i] > max_magnitude && freq >= 80.0 && freq <= 3000.0) {
-            max_magnitude = magnitudes[i];
-            max_magnitude_freq = freq;
-            max_idx = i;
-        }
-    }
-    qDebug() << "Freq: " << max_magnitude_freq << " at " << max_idx;
+    qDebug() << "Max magnitude freq: " << max_magnitude_freq;
     */
 
     /*
@@ -234,11 +210,9 @@ void AudioEngine::computeSpectrum(QVector<float> buffer) {
     }
     */
 
+    // Apply prev magnitudes to smooth spectrum
     static const float kPrevMagnitudesWeight = 0.7f;
     for (int k = 0; k < magnitudes.size(); ++k) {
-        //float norm = maxMag > 0.0f ? magnitudes[k] / maxMag : 0.0f;
-        //norm = powf(norm, 0.4f);
-        //magnitudes[k] = 0.95f * prevMagnitudes_[k] + 0.05f * magnitudes[k];
         magnitudes[k] = kPrevMagnitudesWeight * m_prevMagnitudes[k] + (1.0f - kPrevMagnitudesWeight) * magnitudes[k];
         if (!qIsInf(magnitudes[k]))
             m_prevMagnitudes[k] = magnitudes[k];

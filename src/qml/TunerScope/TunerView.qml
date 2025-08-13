@@ -5,6 +5,9 @@ Item {
     id: root
     anchors.fill: parent
 
+    property int maxHeight: 120
+    property int minHeight: 100
+
     ListView {
         id: closestNotesView
         anchors.fill: parent
@@ -16,7 +19,7 @@ Item {
             id: noteDelegate
             height: closestNotesView.height
             width: closestNotesView.width / 3 //(closestNotesView.width - 2 * closestNotesView.spacing) / 3
-            y: fixedFontHeight // TODO: make font as context item and calculate center properly
+            y: fixedFontHeight / 2 // TODO: make font as context item and calculate center properly
 
             Shape {
                 id: tuneMark

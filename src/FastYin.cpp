@@ -7,22 +7,22 @@
 
 namespace {
 
-void fft(std::vector<double[2]> &data, int fftSize) {
+void fft(std::vector<fftw_complex> &data, int fftSize) {
     fftw_complex *in, *out;
     fftw_plan p;
     const int N = fftSize;
-    p = fftw_plan_dft_1d(N, reinterpret_cast<fftw_complex*>(data.data()), data.data(), FFTW_FORWARD, FFTW_ESTIMATE);
+    p = fftw_plan_dft_1d(N, data.data(), data.data(), FFTW_FORWARD, FFTW_ESTIMATE);
 
     fftw_execute(p);
 
     fftw_destroy_plan(p);
 }
 
-void inverseFft(std::vector<double[2]> &data, int fftSize) {
+void inverseFft(std::vector<fftw_complex> &data, int fftSize) {
     fftw_complex *in, *out;
     fftw_plan p;
     const int N = fftSize;
-    p = fftw_plan_dft_1d(N, reinterpret_cast<fftw_complex*>(data.data()), data.data(), FFTW_BACKWARD, FFTW_ESTIMATE);
+    p = fftw_plan_dft_1d(N, data.data(), data.data(), FFTW_BACKWARD, FFTW_ESTIMATE);
 
     fftw_execute(p);
 
@@ -33,8 +33,8 @@ void inverseFft(std::vector<double[2]> &data, int fftSize) {
     }
 }
 
-std::vector<double[2]> convertQVector(const QVector<float>& data) {
-    std::vector<double[2]> result(data.size());
+std::vector<fftw_complex> convertQVector(const QVector<float>& data) {
+    std::vector<fftw_complex> result(data.size());
     for (int i = 0; i < result.size(); ++i) {
         result[i][0] = data[i];
         result[i][1] = 0.0f;
@@ -42,7 +42,7 @@ std::vector<double[2]> convertQVector(const QVector<float>& data) {
     return result;
 }
 
-QVector<float> convertVector(std::vector<double[2]>& data) {
+QVector<float> convertVector(std::vector<fftw_complex>& data) {
     QVector<float> result(data.size() * 2);
     for (int i = 0; i < data.size(); ++i) {
         result[2*i] = data[i][0];
@@ -207,8 +207,8 @@ void FastYin::differencePowerOf2() {
 
     // FFTW plans (in-place possible with separate arrays)
     // It is not really c++ way and might have issues, but for most compilers this should work
-    fftw_complex *fa = reinterpret_cast<fftw_complex *>(A.data());
-    fftw_complex *fb = reinterpret_cast<fftw_complex *>(B.data());
+    fftw_complex *fa = reinterpret_cast<fftw_complex*>(A.data());
+    fftw_complex *fb = reinterpret_cast<fftw_complex*>(B.data());
     fftw_plan pa = fftw_plan_dft_1d(N, fa, fa, FFTW_FORWARD, FFTW_ESTIMATE);
     fftw_plan pb = fftw_plan_dft_1d(N, fb, fb, FFTW_FORWARD, FFTW_ESTIMATE);
 

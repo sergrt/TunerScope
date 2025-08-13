@@ -1,14 +1,29 @@
 import QtQuick
 import QtQuick.Window
 import QtQuick.Layouts
+import QtQuick.Shapes
+
+//import QtQuick.Controls.Basic
+//import QtQuick.Controls.Fusion
+////import QtQuick.Controls.Imagine
+////import QtQuick.Controls.Material
+import QtQuick.Controls.Universal
+//import QtQuick.Controls.Windows
 
 Window {
     id: mainWindow
-    width: 640
-    height: 360
+    width: settingsModel.wndWidth
+    height: settingsModel.wndHeight
     visible: true
     title: qsTr("TunerScope")
     color: "black"
+
+    onWidthChanged: {
+        settingsModel.wndWidth = width
+    }
+    onHeightChanged: {
+        settingsModel.wndHeight = height
+    }
 
     Settings {
         id: settings
@@ -24,7 +39,8 @@ Window {
             color: "black"
             Layout.fillHeight: true
             Layout.fillWidth: true
-            implicitHeight: 2 * parent.height / 3
+            implicitHeight: 3 * parent.height / 4
+            //Layout.preferredHeight: 2 * parent.height / 3
 
             SpectrumView {
                 anchors.fill: parent
@@ -37,23 +53,44 @@ Window {
             Layout.fillHeight: true
             Layout.fillWidth: true
             Layout.alignment: Qt.AlignVCenter
-            implicitHeight: parent.height / 3
+            implicitHeight: parent.height / 4
+            //Layout.preferredHeight: parent.height / 3
+
 
             TunerView {
+                id: tunerView
                 anchors.fill: parent
             }
+            Layout.maximumHeight: tunerView.maxHeight
+            Layout.minimumHeight: tunerView.minHeight
         }
 
         Rectangle {
+            id: statusBarRect
             color: "black"
             Layout.fillHeight: true
             Layout.fillWidth: true
             Layout.alignment: Qt.AlignVCenter
-            implicitHeight: 22
+
+            Shape {
+                id: topBorder
+                ShapePath {
+                    strokeWidth: 1
+                    strokeColor: "gray"
+                    fillRule: ShapePath.OddEvenFill
+
+                    PathPolyline {
+                            path: [ Qt.point(0.0, 0.0),
+                                    Qt.point(statusBarRect.width, 0.0) ]
+                    }
+                }
+            }
 
             StatusView {
+                id: statusView
                 anchors.fill: parent
             }
+            implicitHeight: statusView.implicitHeight
         }
     }
 }
