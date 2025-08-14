@@ -28,6 +28,7 @@ Settings::Settings(QObject *parent)
     if (!load())
         save();
 }
+
 Settings::~Settings() {
     try {
         save();

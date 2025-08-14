@@ -7,13 +7,6 @@ Item {
     id: root
     anchors.fill: parent
 
-    /*
-    HoverHandler {
-        id: hoverHandler
-        cursorShape: Qt.CrossCursor
-    }
-    */
-
     LabelHelper {
         id: labelHelper
     }
@@ -21,7 +14,7 @@ Item {
     ListView {
         id: listRoot
 
-        readonly property int markGapPx: 2 // vertical distance from scale mark to number
+        readonly property int markGapPx: 2  // vertical distance from scale mark to number
         readonly property int markHeightPx: 2
         readonly property int scaleHeight: fixedFontHeight * 2 + markGapPx + markHeightPx
         // readonly property int markDensity: 20 // Deprecated, used as index % markDensity === 0
@@ -38,7 +31,6 @@ Item {
 
         delegate: Item {
             id: delegate
-
             width: 2
             height: listRoot.height
 
@@ -46,8 +38,7 @@ Item {
                 id: mouseArea
 
                 anchors.fill: parent
-                hoverEnabled: true // Enable hover events
-
+                hoverEnabled: true
 
                 onEntered: {
                     var pos = mapToItem(listRoot, mouseX, mouseY)
@@ -69,13 +60,6 @@ Item {
 
             HoverHandler {
                 id: hoverHandler
-                /*
-                onHoveredChanged: {
-                    if (hovered) {
-                        //cursorShape: Qt.CrossCursor
-                    }
-                }
-                */
             }
 
             Rectangle {
@@ -83,16 +67,13 @@ Item {
                 width: parent.width
                 height: Math.max(1, magnitude * (parent.height - listRoot.scaleHeight))
                 y: parent.height - height - listRoot.scaleHeight
-                color: hoverHandler.hovered ? "darkorange" : Qt.rgba(
-                    magnitude,
-                    0.4 + 0.6 * magnitude,
-                    1.0,
-                    1.0)
+                color: hoverHandler.hovered
+                       ? "darkorange"
+                       : Qt.rgba(magnitude, 0.4 + 0.6 * magnitude, 1.0, 1.0)
             }
 
             Shape {
                 id: scaleMark
-
                 visible: labelHelper.shouldDisplayLabel(index)
 
                 ShapePath {
@@ -102,8 +83,8 @@ Item {
                     fillRule: ShapePath.OddEvenFill
 
                     PathPolyline {
-                            path: [ Qt.point(0.0, histogramItem.y + histogramItem.height + 1),
-                                    Qt.point(0.0, histogramItem.y + histogramItem.height + 1 + listRoot.markHeightPx) ]
+                        path: [ Qt.point(0.0, histogramItem.y + histogramItem.height + 1),
+                                Qt.point(0.0, histogramItem.y + histogramItem.height + 1 + listRoot.markHeightPx) ]
                     }
                 }
             }
@@ -112,7 +93,7 @@ Item {
                 id: scaleText
                 //visible: index % listRoot.markDensity == 0
                 visible: labelHelper.shouldDisplayLabel(index)
-                x:  - width / 2
+                x:  -width / 2
                 y: parent.height - listRoot.scaleHeight - 2 + listRoot.markGapPx + listRoot.markHeightPx
 
                 horizontalAlignment: Text.AlignHCenter
@@ -122,7 +103,7 @@ Item {
                 color: "white"
                 renderType: Text.NativeRendering
             }
-        } // delegate
+        }  // delegate
 
         Rectangle {
             id: currentFreqContainer
@@ -139,13 +120,12 @@ Item {
 
             Text {
                 id: currentFreq
-
                 anchors.centerIn: parent
                 font: fixedFont
                 color: "black"
                 fontSizeMode: Text.Fit
             }
         }
-    }
+    }  // ListView
 }
 

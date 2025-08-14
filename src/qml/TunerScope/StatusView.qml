@@ -18,28 +18,30 @@ Item {
         anchors.bottomMargin: 2
         spacing: 10
 
-
         Text {
             text: settingsModel.deviceName
             color: "lightsteelblue"
             Layout.fillWidth: true
             font: fixedFont
-            renderType: Text.NativeRendering
+            //renderType: Text.NativeRendering
         }
+
         Text {
-            text: {"Sample Rate = " + settingsModel.sampleRate}
+            text: qsTr("Sample Rate = ") + settingsModel.sampleRate
             color: "lightsteelblue"
             Layout.alignment: Qt.AlignRight
             font: fixedFont
-            renderType: Text.NativeRendering
+            //renderType: Text.NativeRendering
         }
+
         Text {
-            text: "FFT size = " + settingsModel.fftSize
+            text: qsTr("FFT size = ") + settingsModel.fftSize
             color: "lightsteelblue"
             Layout.alignment: Qt.AlignRight
             font: fixedFont
-            renderType: Text.NativeRendering
+            //renderType: Text.NativeRendering
         }
+
         Button  {
             id: settingsButton
             text: qsTr("Settings")
@@ -47,7 +49,6 @@ Item {
             Layout.fillWidth: false
 
             // For Windows style this looks better
-
             background: Rectangle {
                 radius: 0
                 color: "gray"
@@ -55,8 +56,6 @@ Item {
                 border.color: settingsButton.hovered ? "skyblue" : "darkgray"
                 border.width: 1.5
             }
-
-
             implicitHeight: fixedFontHeight * 1.5
 
             onClicked: {
@@ -65,5 +64,5 @@ Item {
                 //mainLayout.visible = false;
             }
         }
-    }
+    }  // RowLayout
 }

@@ -172,8 +172,8 @@ void FastYin::difference() {
 }
 
 void FastYin::differencePowerOf2() {
-    int M = (int)m_yinBuffer.size();            // number of lags we want (e.g. half window)
-    int signalLen = (int)m_audioBuffer.size();  // original frame length, must be >= M * 2 typically
+    int M = static_cast<int>(m_yinBuffer.size());  // number of lags we want (e.g. half window)
+    int signalLen = static_cast<int>(m_audioBuffer.size());  // original frame length, must be >= M * 2 typically
 
     // power terms: powerTerms[tau] = sum_{j=0..M-1} x[j+tau]^2  (we'll compute as sliding)
     std::vector<double> powerTerms(M, 0.0);
@@ -206,9 +206,9 @@ void FastYin::differencePowerOf2() {
         B[k] = 0.0;
 
     // FFTW plans (in-place possible with separate arrays)
-    // It is not really c++ way and might have issues, but for most compilers this should work
-    fftw_complex *fa = reinterpret_cast<fftw_complex*>(A.data());
-    fftw_complex *fb = reinterpret_cast<fftw_complex*>(B.data());
+    // NOTE: It is not really c++ way and might have issues, but for most compilers this should work
+    fftw_complex* fa = reinterpret_cast<fftw_complex*>(A.data());
+    fftw_complex* fb = reinterpret_cast<fftw_complex*>(B.data());
     fftw_plan pa = fftw_plan_dft_1d(N, fa, fa, FFTW_FORWARD, FFTW_ESTIMATE);
     fftw_plan pb = fftw_plan_dft_1d(N, fb, fb, FFTW_FORWARD, FFTW_ESTIMATE);
 
@@ -222,7 +222,7 @@ void FastYin::differencePowerOf2() {
     }
 
     // IFFT C
-    fftw_complex *fc = reinterpret_cast<fftw_complex *>(C.data());
+    fftw_complex* fc = reinterpret_cast<fftw_complex *>(C.data());
     fftw_plan pc = fftw_plan_dft_1d(N, fc, fc, FFTW_BACKWARD, FFTW_ESTIMATE);
     fftw_execute(pc);
 
@@ -247,10 +247,9 @@ void FastYin::differencePowerOf2() {
 }
 
 void FastYin::cumulativeMeanNormalizedDifference() {
-    int tau;
     m_yinBuffer[0] = 1;
     float runningSum = 0;
-    for (tau = 1; tau < m_yinBuffer.size(); ++tau) {
+    for (int tau = 1; tau < m_yinBuffer.size(); ++tau) {
         runningSum += m_yinBuffer[tau];
         m_yinBuffer[tau] *= tau / runningSum;
     }

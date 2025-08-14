@@ -139,15 +139,15 @@ void TunerModel::updateDetectedNotes(const QVector<float>& audioData) {
     //qDebug() << "Detected frequency = " << frequency << ", closest note = " << closestNote.second << " (" << closestNote.first << ")" << ", deviation cents = " << cents;
 
     if (m_prevNotes[1].noteName.isEmpty()) {
-        m_prevNotes[1] = {closestNote.second, noteFreq, frequency, cents};
+        m_maxNotes[1] = {closestNote.second, noteFreq, frequency, cents};
     } else {
         static const float kPrevNotesWeight = 0.88f;
         m_maxNotes[1] = {closestNote.second,
                          noteFreq,
                          kPrevNotesWeight * m_prevNotes[1].curFreq + (1.0f - kPrevNotesWeight) * frequency,
                          kPrevNotesWeight * m_prevNotes[1].cents + (1.0f - kPrevNotesWeight) * cents};
-        m_prevNotes[1] = m_maxNotes[1];
     }
+    m_prevNotes[1] = m_maxNotes[1];
 
     auto prev = findPrevNote(frequency);
     m_maxNotes[0].noteFreq = prev.first;

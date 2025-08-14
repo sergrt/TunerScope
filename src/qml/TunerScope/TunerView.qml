@@ -18,8 +18,8 @@ Item {
         delegate: Item {
             id: noteDelegate
             height: closestNotesView.height
-            width: closestNotesView.width / 3 //(closestNotesView.width - 2 * closestNotesView.spacing) / 3
-            y: fixedFontHeight / 2 // TODO: make font as context item and calculate center properly
+            width: closestNotesView.width / 3  //(closestNotesView.width - 2 * closestNotesView.spacing) / 3
+            y: fixedFontHeight / 2
 
             Shape {
                 id: tuneMark
@@ -35,20 +35,16 @@ Item {
                     property real centsScale: (root.width / 3) / noteDelegate.width // TODO: check
 
                     PathPolyline {
-                            //path: [ Qt.point(root.width / 3 / 2 + cents, tuneMarkShapePath.strokeWidth),
-                            //        Qt.point(root.width / 3 / 2 + cents, closestNotesView.height) ]
-                            path: [ Qt.point(root.width / 3 / 2 + cents * tuneMarkShapePath.centsScale, tuneMarkShapePath.strokeWidth),
-                                    Qt.point(root.width / 3 / 2 + cents * tuneMarkShapePath.centsScale, noteText.height) ]
+                        path: [ Qt.point(root.width / 3 / 2 + cents * tuneMarkShapePath.centsScale, tuneMarkShapePath.strokeWidth),
+                                Qt.point(root.width / 3 / 2 + cents * tuneMarkShapePath.centsScale, noteText.height) ]
                     }
 
                     PathPolyline {
-                            //path: [ Qt.point(root.width / 3 / 2 + cents, tuneMarkShapePath.strokeWidth),
-                            //        Qt.point(root.width / 3 / 2 + cents, closestNotesView.height) ]
-                            path: [ Qt.point(root.width / 3 / 2 + cents * tuneMarkShapePath.centsScale, deviationText.y + deviationText.height),
-                                    Qt.point(root.width / 3 / 2 + cents * tuneMarkShapePath.centsScale, closestNotesView.height) ]
+                        path: [ Qt.point(root.width / 3 / 2 + cents * tuneMarkShapePath.centsScale, deviationText.y + deviationText.height),
+                                Qt.point(root.width / 3 / 2 + cents * tuneMarkShapePath.centsScale, closestNotesView.height) ]
                     }
                 }
-            }
+            }  // Shape
 
             Text {
                 id: noteText
@@ -74,7 +70,6 @@ Item {
                 font.pixelSize: 28
                 font.bold: true
                 text: Math.round(cents)
-
                 visible: index === 1
             }
 
@@ -87,5 +82,5 @@ Item {
                 text: (noteFreq).toFixed(1) + (index === 1 ? " (" + (curFreq).toFixed(1) + ")" : "")
             }
         }
-    }
+    }  //ListView
 }

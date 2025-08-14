@@ -1,7 +1,7 @@
 #pragma once
 
-#include <QAudioDevice>
 #include <QAbstractListModel>
+#include <QAudioDevice>
 #include <QList>
 
 class Settings : public QAbstractListModel {
@@ -23,8 +23,8 @@ public:
     Q_PROPERTY(int sampleRate READ getSampleRate WRITE setSampleRate NOTIFY sampleRateChanged)
     Q_PROPERTY(QAudioFormat::SampleFormat sampleFormat READ getSampleFormat WRITE setSampleFormat NOTIFY sampleFormatChanged)
     Q_PROPERTY(int fftSize READ getFftSize WRITE setFftSize NOTIFY fftSizeChanged)
-    Q_PROPERTY(int wndWidth READ getWndWidth WRITE setWndWidth)
-    Q_PROPERTY(int wndHeight READ getWndHeight WRITE setWndHeight)
+    Q_PROPERTY(int wndWidth READ getWndWidth WRITE setWndWidth NOTIFY wndWidthChanged)
+    Q_PROPERTY(int wndHeight READ getWndHeight WRITE setWndHeight NOTIFY wndHeightChanged)
 
     explicit Settings(QObject *parent = nullptr);
     ~Settings();
@@ -63,6 +63,8 @@ signals:
     void sampleRateChanged(int sampleRate);
     void sampleFormatChanged(QAudioFormat::SampleFormat sampleFormat);
     void fftSizeChanged(int value);
+    void wndWidthChanged(int w);
+    void wndHeightChanged(int h);
 
     void settingsChanged();
 
@@ -75,8 +77,8 @@ private:
     void enumerateDevices();
     bool load();
 
-    const int kDefaultWndWidth = 600;
-    const int kDefaultWndHeight = 400;
+    const int kDefaultWndWidth{600};
+    const int kDefaultWndHeight{400};
 
     QList<QAudioDevice> m_devices;
     QByteArray m_deviceId{};

@@ -3,6 +3,7 @@ import QtQuick.Window
 import QtQuick.Layouts
 import QtQuick.Shapes
 
+// For quick ui style testing
 //import QtQuick.Controls.Basic
 //import QtQuick.Controls.Fusion
 ////import QtQuick.Controls.Imagine
@@ -40,12 +41,10 @@ Window {
             Layout.fillHeight: true
             Layout.fillWidth: true
             implicitHeight: 3 * parent.height / 4
-            //Layout.preferredHeight: 2 * parent.height / 3
 
             SpectrumView {
                 anchors.fill: parent
             }
-
         }
 
         Rectangle {
@@ -54,8 +53,6 @@ Window {
             Layout.fillWidth: true
             Layout.alignment: Qt.AlignVCenter
             implicitHeight: parent.height / 4
-            //Layout.preferredHeight: parent.height / 3
-
 
             TunerView {
                 id: tunerView
@@ -78,11 +75,7 @@ Window {
                     strokeWidth: 1
                     strokeColor: "gray"
                     fillRule: ShapePath.OddEvenFill
-
-                    PathPolyline {
-                            path: [ Qt.point(0.0, 0.0),
-                                    Qt.point(statusBarRect.width, 0.0) ]
-                    }
+                    PathPolyline { path: [ Qt.point(0.0, 0.0), Qt.point(statusBarRect.width, 0.0) ] }
                 }
             }
 
@@ -92,5 +85,5 @@ Window {
             }
             implicitHeight: statusView.implicitHeight
         }
-    }
+    }  // ColumnLayout
 }

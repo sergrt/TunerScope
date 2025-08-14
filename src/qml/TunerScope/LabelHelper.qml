@@ -1,5 +1,6 @@
 import QtQuick
 
+// Object to determine whether label fits on scale without overlapping
 QtObject {
     id: labelHelper
 
