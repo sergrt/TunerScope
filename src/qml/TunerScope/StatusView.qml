@@ -53,7 +53,7 @@ Item {
                 color: "gray"
                 //border.color: "darkgray"
                 border.color: settingsButton.hovered ? "skyblue" : "darkgray"
-                border.width: 1
+                border.width: 1.5
             }
 
 
@@ -61,8 +61,8 @@ Item {
 
             onClicked: {
                 settings.visible = true;
-                //settings.z = 1
-                mainLayout.visible = false;
+                settings.z = 1
+                //mainLayout.visible = false;
             }
         }
     }
