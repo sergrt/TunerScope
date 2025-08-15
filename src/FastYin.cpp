@@ -8,25 +8,18 @@
 namespace {
 
 void fft(std::vector<fftw_complex> &data, int fftSize) {
-    fftw_complex *in, *out;
-    fftw_plan p;
     const int N = fftSize;
-    p = fftw_plan_dft_1d(N, data.data(), data.data(), FFTW_FORWARD, FFTW_ESTIMATE);
-
+    fftw_plan p = fftw_plan_dft_1d(N, data.data(), data.data(), FFTW_FORWARD, FFTW_ESTIMATE);
     fftw_execute(p);
-
     fftw_destroy_plan(p);
 }
 
 void inverseFft(std::vector<fftw_complex> &data, int fftSize) {
-    fftw_complex *in, *out;
-    fftw_plan p;
     const int N = fftSize;
-    p = fftw_plan_dft_1d(N, data.data(), data.data(), FFTW_BACKWARD, FFTW_ESTIMATE);
-
+    fftw_plan p = fftw_plan_dft_1d(N, data.data(), data.data(), FFTW_BACKWARD, FFTW_ESTIMATE);
     fftw_execute(p);
-
     fftw_destroy_plan(p);
+
     for (int i = 0; i < data.size(); ++i) {
         //data[i][0] /= N;
         data[i][1] /= N;
@@ -63,7 +56,7 @@ FastYin::FastYin(QVector<float> audioBuffer, int sampleRate) {
     m_audioBuffer.swap(audioBuffer);
     m_sampleRate = sampleRate;
 
-    size_t bufferSize = m_audioBuffer.size();
+    const size_t bufferSize = m_audioBuffer.size();
     m_yinBuffer.resize(bufferSize / 2);
     m_audioBufferFFT.resize(2 * bufferSize);
     m_kernel.resize(2 * bufferSize);
@@ -89,7 +82,7 @@ float FastYin::getPitch() {
 
     // step 5
     if (tauEstimate != -1) {
-        float betterTau = parabolicInterpolation(tauEstimate);
+        const float betterTau = parabolicInterpolation(tauEstimate);
 
         // step 6
         // TODO Implement optimization for the AUBIO_YIN algorithm.
@@ -110,11 +103,10 @@ float FastYin::getPitch() {
 }
 
 void FastYin::difference() {
-
     // POWER TERM CALCULATION
     // ... for the power terms in equation (7) in the Yin paper
-    int M = m_yinBuffer.size();
-    int signalLen = m_audioBuffer.size();
+    const int M = m_yinBuffer.size();
+    const int signalLen = m_audioBuffer.size();
     QVector<float> powerTerms(M, 0.0f);
     for (int j = 0; j < m_yinBuffer.size(); ++j) {
         powerTerms[0] += m_audioBuffer[j] * m_audioBuffer[j];
@@ -156,24 +148,24 @@ void FastYin::difference() {
 
     //+ Normalize
     for (int i = 0; i < m_yinStyleACF.size(); ++i) {
-        m_yinStyleACF[i] = m_yinStyleACF[i] / double(yinStyleACFBuffer.size()/2);
+        m_yinStyleACF[i] = m_yinStyleACF[i] / (yinStyleACFBuffer.size() / 2.0);
     }
 
     // CALCULATION OF difference function
     // ... according to (7) in the Yin paper.
     for (int j = 0; j < M; ++j) {
         // taking only the real part
-        int idx = 2 * (M - 1 + j);
+        const int idx = 2 * (M - 1 + j);
         double acf_val = m_yinStyleACF[idx];
-        m_yinBuffer[j] = powerTerms[0] + powerTerms[j] - 2 * acf_val;
+        m_yinBuffer[j] = powerTerms[0] + powerTerms[j] - 2.0 * acf_val;
     }
     return;
 
 }
 
 void FastYin::differencePowerOf2() {
-    int M = static_cast<int>(m_yinBuffer.size());  // number of lags we want (e.g. half window)
-    int signalLen = static_cast<int>(m_audioBuffer.size());  // original frame length, must be >= M * 2 typically
+    const int M = static_cast<int>(m_yinBuffer.size());  // number of lags we want (e.g. half window)
+    const int signalLen = static_cast<int>(m_audioBuffer.size());  // original frame length, must be >= M * 2 typically
 
     // power terms: powerTerms[tau] = sum_{j=0..M-1} x[j+tau]^2  (we'll compute as sliding)
     std::vector<double> powerTerms(M, 0.0);
@@ -230,7 +222,7 @@ void FastYin::differencePowerOf2() {
     // after this, the lag tau correlation value is at index (M - 1 + tau)
     std::vector<double> corr(N);
     for (int k = 0; k < N; ++k) {
-        corr[k] = C[k].real() / double(N);  // IMPORTANT: divide by N
+        corr[k] = C[k].real() / static_cast<double>(N);  // IMPORTANT: divide by N
     }
 
     // compute yin difference:

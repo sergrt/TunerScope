@@ -33,27 +33,27 @@ public:
     QVariant data(const QModelIndex &index, int role) const override;
     QHash<int, QByteArray> roleNames() const override;
 
-    QByteArray getDeviceId() const;
-    QString getDeviceName() const;
+    QByteArray getDeviceId() const noexcept;
+    QString getDeviceName() const noexcept;
 
-    Channel getChannel() const;
+    Channel getChannel() const noexcept;
     void setChannel(Channel channel);
 
-    int getSampleRate() const;
+    int getSampleRate() const noexcept;
     void setSampleRate(int sampleRate);
 
-    QAudioFormat::SampleFormat getSampleFormat() const;
+    QAudioFormat::SampleFormat getSampleFormat() const noexcept;
     void setSampleFormat(QAudioFormat::SampleFormat sampleFormat);
 
-    int getFftSize() const;
+    int getFftSize() const noexcept;
     void setFftSize(int sz);
 
-    int getRefreshRateMs() const;
+    int getRefreshRateMs() const noexcept;
 
-    int getWndWidth() const;
+    int getWndWidth() const noexcept;
     void setWndWidth(int w);
 
-    int getWndHeight() const;
+    int getWndHeight() const noexcept;
     void setWndHeight(int h);
 
 signals:

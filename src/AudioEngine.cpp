@@ -29,9 +29,8 @@ void TraceDevices() {
 }
 
 void fft(std::vector<fftw_complex> &data, int fftSize) {
-    fftw_plan p;
     const int N = fftSize; //data.size();
-    p = fftw_plan_dft_1d(N, data.data(), data.data(), FFTW_FORWARD, FFTW_ESTIMATE);
+    fftw_plan p = fftw_plan_dft_1d(N, data.data(), data.data(), FFTW_FORWARD, FFTW_ESTIMATE);
     fftw_execute(p);
     fftw_destroy_plan(p);
 }
@@ -46,7 +45,11 @@ AudioEngine::AudioEngine(QObject *parent)
 }
 
 AudioEngine::~AudioEngine() {
-    m_audioInput->stop();
+    try {
+        stop();
+    } catch (...) {
+        qWarning("Exception while stopping audio engine");
+    }
 }
 
 void AudioEngine::updateFromSettings(const Settings& settings) {
@@ -61,7 +64,7 @@ void AudioEngine::updateFromSettings(const Settings& settings) {
 QAudioFormat AudioEngine::composeAudioFormat() const {
     QAudioFormat format{};
     format.setSampleRate(m_sampleRate);
-    int channelCount = m_channel == Settings::Channel::Both ? 2 : 1;
+    const int channelCount = m_channel == Settings::Channel::Both ? 2 : 1;
     format.setChannelCount(channelCount); // TODO: determine whether it is needed
     format.setSampleFormat(m_sampleFormat);
     if (m_channel == Settings::Channel::Both)
@@ -76,7 +79,7 @@ void AudioEngine::start() {
     initHannWindow();
     initPrevMagnitudes();
 
-    auto format = composeAudioFormat();
+    const auto format = composeAudioFormat();
     QAudioDevice device{};
 
     auto devices =  QMediaDevices::audioInputs();
@@ -86,7 +89,7 @@ void AudioEngine::start() {
             break;
         }
     }
-    m_audioInput.reset(new QAudioSource(device, format, this));
+    m_audioInput = std::make_unique<QAudioSource>(device, format, this);
     m_inputDevice = m_audioInput->start();
 
     if (!m_inputDevice) {
@@ -103,7 +106,8 @@ void AudioEngine::stop() {
     if (m_inputDevice)
         m_inputDevice->close();
 
-    m_audioInput->stop();
+    if (m_audioInput)
+        m_audioInput->stop();
 }
 
 void AudioEngine::restart() {
@@ -211,7 +215,7 @@ void AudioEngine::computeSpectrum(QVector<float> buffer) {
     */
 
     // Apply prev magnitudes to smooth spectrum
-    static const float kPrevMagnitudesWeight = 0.7f;
+    static constexpr float kPrevMagnitudesWeight = 0.7f;
     for (int k = 0; k < magnitudes.size(); ++k) {
         magnitudes[k] = kPrevMagnitudesWeight * m_prevMagnitudes[k] + (1.0f - kPrevMagnitudesWeight) * magnitudes[k];
         if (!qIsInf(magnitudes[k]))

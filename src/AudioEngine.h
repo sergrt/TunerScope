@@ -32,6 +32,9 @@ private:
     template<typename T>
     QVector<float> extractData(const QByteArray& src) {
         const T* samples = reinterpret_cast<const T*>(src.constData());
+        if (!samples)
+            return {};
+
         int frameCount = src.size() / sizeof(T);
         if (m_channel == Settings::Channel::Both)
             frameCount = src.size() / (sizeof(T) * 2); // 2 channels

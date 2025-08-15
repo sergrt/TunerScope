@@ -2,7 +2,7 @@
 
 namespace {
 
-static const float kThreshold = 0.05f; // 95% probability
+static constexpr float kThreshold = 0.05f; // 95% probability
 
 } // namespace
 
@@ -16,10 +16,10 @@ float YinPitchCalculator::getPitch() {
     Yin yin{};
     try {
         Yin_init(&yin, m_audioBuffer.size(), kThreshold);
-        auto pitch = Yin_getPitch(&yin, m_audioBuffer.data());
+        const auto pitch = Yin_getPitch(&yin, m_audioBuffer.data());
         Yin_free(&yin);
         return pitch;
-    } catch(std::exception& e) {
+    } catch(const std::exception&) {
         qWarning("Exception while getting yin pitch result");
         Yin_free(&yin);
     }

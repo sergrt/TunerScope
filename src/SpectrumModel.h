@@ -22,7 +22,7 @@ public:
     void updateFromSettings(const Settings& settings);
 
 public slots:
-    void updateSpectrum(const QVector<float>& spectrum);
+    void updateSpectrum(QVector<float> spectrum);
 
 private:
     void forceReset();

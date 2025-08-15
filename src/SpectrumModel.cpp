@@ -1,5 +1,8 @@
 #include "SpectrumModel.h"
 
+#include <algorithm>
+#include <execution>
+
 SpectrumModel::SpectrumModel(QObject* parent)
     : QAbstractListModel(parent) {
 }
@@ -38,7 +41,7 @@ QHash<int, QByteArray> SpectrumModel::roleNames() const {
     };
 }
 
-void SpectrumModel::updateSpectrum(const QVector<float>& spectrum) {
+void SpectrumModel::updateSpectrum(QVector<float> spectrum) {
     /*
     static int dbg = 0;
     ++dbg;
@@ -52,14 +55,19 @@ void SpectrumModel::updateSpectrum(const QVector<float>& spectrum) {
         beginResetModel();
     }
 
-    m_spectrum.resize(spectrum.size());
+    //m_spectrum.resize(spectrum.size());
+    m_spectrum.swap(spectrum);
 
     // Normalize [0.0 ... 1.0]
-    auto max_magnitude_iterator = std::max_element(spectrum.begin(), spectrum.end());
-    auto max_magnitude = *max_magnitude_iterator;
-    for (int i = 0; i < spectrum.size(); ++i) {
+    const auto max_magnitude_iterator = std::max_element(m_spectrum.begin(), m_spectrum.end());
+    const auto max_magnitude = *max_magnitude_iterator;
+    std::for_each(std::execution::par_unseq, m_spectrum.begin(), m_spectrum.end(),
+                  [max_magnitude](float& i) { i = i / max_magnitude; });
+    /*
+    for (int i = 0, sz = spectrum.size(); i < sz; ++i) {
         m_spectrum[i] = spectrum[i] / max_magnitude;
     }
+    */
 
     if (resetModel) {
         m_scaleValues.reserve(m_spectrum.size());

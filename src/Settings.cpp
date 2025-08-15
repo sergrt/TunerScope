@@ -71,15 +71,15 @@ void Settings::changeDevice(int index) {
     emit settingsChanged();
 }
 
-QByteArray Settings::getDeviceId() const {
+QByteArray Settings::getDeviceId() const noexcept {
     return m_deviceId;
 }
 
-QString Settings::getDeviceName() const {
+QString Settings::getDeviceName() const noexcept {
     return m_deviceName;
 }
 
-Settings::Channel Settings::getChannel() const {
+Settings::Channel Settings::getChannel() const noexcept {
     return m_channel;
 }
 
@@ -90,7 +90,7 @@ void Settings::setChannel(Channel channel) {
     emit settingsChanged();
 }
 
-int Settings::getSampleRate() const {
+int Settings::getSampleRate() const noexcept {
     return m_sampleRate;
 }
 
@@ -101,7 +101,7 @@ void Settings::setSampleRate(int sampleRate) {
     emit settingsChanged();
 }
 
-QAudioFormat::SampleFormat Settings::getSampleFormat() const {
+QAudioFormat::SampleFormat Settings::getSampleFormat() const noexcept {
     return m_sampleFormat;
 }
 
@@ -112,7 +112,7 @@ void Settings::setSampleFormat(QAudioFormat::SampleFormat sampleFormat) {
     emit settingsChanged();
 }
 
-int Settings::getFftSize() const {
+int Settings::getFftSize() const noexcept {
     return m_fftSize;
 }
 
@@ -123,11 +123,11 @@ void Settings::setFftSize(int sz) {
     emit settingsChanged();
 }
 
-int Settings::getRefreshRateMs() const {
+int Settings::getRefreshRateMs() const noexcept {
     return m_refreshRateMs;
 }
 
-int Settings::getWndWidth() const {
+int Settings::getWndWidth() const noexcept {
     return m_wndWidth;
 }
 
@@ -135,7 +135,7 @@ void Settings::setWndWidth(int w) {
     m_wndWidth = w;
 }
 
-int Settings::getWndHeight() const {
+int Settings::getWndHeight() const noexcept {
     return m_wndHeight;
 }
 

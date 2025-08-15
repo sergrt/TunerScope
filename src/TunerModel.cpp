@@ -125,12 +125,12 @@ QHash<int, QByteArray> TunerModel::roleNames() const {
 void TunerModel::updateDetectedNotes(const QVector<float>& audioData) {
     // Uncomment to compare yin results
     //YinPitchCalculator yin(audioData, m_sampleRate);
-    //float freqYin = yin.getPitch();
+    //const float freqYin = yin.getPitch();
     FastYin fastYin(audioData, m_sampleRate);
-    float freqFastYin = fastYin.getPitch();
+    const float freqFastYin = fastYin.getPitch();
     //qDebug() << "Detected frequency: " << "yin = " << freqYin << ", fastYin = " << freqFastYin;
 
-    float frequency = freqFastYin;
+    const float frequency = freqFastYin;
     const auto closestNote = findClosestNote(frequency);
     const float noteFreq = closestNote.first;
     float cents = 1200 * log2(frequency / noteFreq);
@@ -141,7 +141,7 @@ void TunerModel::updateDetectedNotes(const QVector<float>& audioData) {
     if (m_prevNotes[1].noteName.isEmpty()) {
         m_maxNotes[1] = {closestNote.second, noteFreq, frequency, cents};
     } else {
-        static const float kPrevNotesWeight = 0.88f;
+        static constexpr float kPrevNotesWeight = 0.88f;
         m_maxNotes[1] = {closestNote.second,
                          noteFreq,
                          kPrevNotesWeight * m_prevNotes[1].curFreq + (1.0f - kPrevNotesWeight) * frequency,
