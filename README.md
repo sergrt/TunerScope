@@ -7,8 +7,8 @@
     - [Example Use Cases](#example-use-cases)
   - [Settings](#settings)
   - [Technical details](#technical-details)
-    - [Brief notes](#brief-notes)
-    - [Pitch detection](#pitch-detection)
+    - [Compilation from sources](#compilation-from-sources)
+    - [Pitch detection algorithm](#pitch-detection-algorithm)
 
 
 ## Descriptiom
@@ -44,7 +44,24 @@ The settings window allows you to:
 <br>
 
 ## Technical details
-### Brief notes
-Code is written in C++ with QML (Qt 6.9). It has no platform-dependent parts, so can be compiled on any platform subborting Qt. Currently I provide only Windows prebuild binaries, more platforms will be available for downloading later.
-### Pitch detection
-`TunerScope` uses FastYin pitch detection algorithm. I have tried to adapt java implementation of this algorithm to C++ with some success, but decided to add "traditional" Yin algorithm (without fft) to check te accuracy, and found that my adaptation produces slightly different results (difference is really subtle). So I decided to implement my own `difference()` function implementation, with fft size of power of 2, and results are exactly as with Yin algorithm. Both implementations are available in source code, as long aas Yin implementation.
+### Compilation from sources
+The code is written in C++ with QML (Qt 6.9). It contains no platform-dependent parts, so it can be built on any platform supported by Qt: Linux, macOS, or Android.
+Currently, only prebuilt binaries for Windows are provided, but builds for other platforms might be available for download later.
+
+The project uses the `fftw` library (https://www.fftw.org/). Its sources are included in the project tree for convenience, so you need to build it first. Since the library is not intended to be built directly from GitHub sources, I didn’t use Git submodules or similar approaches.
+
+Typical compilation steps:
+```bash
+$ mkdir build
+$ cd build
+$ cmake .. -DCMAKE_BUILD_TYPE=Release
+```
+... then build with your preferred toolchain.
+
+### Pitch detection algorithm
+`TunerScope` uses the FastYin pitch detection algorithm.
+Initially, I adapted a Java implementation of this algorithm to C++ with some success. To validate accuracy, I also implemented the "traditional" Yin algorithm (without FFT) and found that my adaptation produced slightly different results - though the differences were very subtle.
+
+To resolve this, I wrote my own `difference()` function using an FFT size that is a power of two. With this, the results exactly matched those of the original Yin algorithm. Both implementations are available in the source code, and switching between them is straightforward.
+
+Note: FastYin is named that for a reason - in testing, it showed at least 5x better performance compared to the traditional Yin implementation.
